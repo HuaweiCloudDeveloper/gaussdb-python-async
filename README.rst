@@ -34,7 +34,7 @@ exposes its features directly, optimized for enterprise database environments:
 * **openGauss compatibility** - Comprehensive test suite and error handling
 * **Enterprise features** - Optimized for production GaussDB environments
 
-
+ 
 Installation
 ------------
 
@@ -46,9 +46,6 @@ has no dependencies. Use pip to install::
 If you need GSSAPI/SSPI authentication, use::
 
     $ pip install 'async-gaussdb[gssauth]'
-
-For more details, please `see the documentation
-<https://magicstack.github.io/async_gaussdb/current/installation.html>`_.
 
 
 Basic Usage
@@ -79,7 +76,7 @@ Basic Usage
     asyncio.run(run())
 
 
-GaussDB/openGauss Specific Features
+GaussDB/openGauss Specific Features 
 -----------------------------------
 
 This library includes enhanced support for GaussDB and openGauss databases:
@@ -109,5 +106,5 @@ This library includes enhanced support for GaussDB and openGauss databases:
 
     asyncio.run(run())
 
-asyncpg is developed and distributed under the Apache 2.0 license 
+async-gaussdb is developed and distributed under the Apache 2.0 license 
 by MagicStack Inc. and the HuaweiCloudDeveloper team.
