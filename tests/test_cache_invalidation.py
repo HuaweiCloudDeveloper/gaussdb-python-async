@@ -27,7 +27,6 @@ class TestCacheInvalidation(tb.ConnectedTestCase):
         self.assertGreater(len(statements), 0)
         self.assertTrue(all(s.closed for s in statements))
 
-    @unittest.skip('cached plan must not change result type')
     async def test_prepare_cache_invalidation_silent(self):
         await self.con.execute('CREATE TABLE tab1(a int, b int)')
 
@@ -49,7 +48,6 @@ class TestCacheInvalidation(tb.ConnectedTestCase):
         finally:
             await self.con.execute('DROP TABLE tab1')
 
-    @unittest.skip('cached plan must not change result type')
     async def test_prepare_cache_invalidation_in_transaction(self):
         await self.con.execute('CREATE TABLE tab1(a int, b int)')
 
@@ -311,7 +309,7 @@ class TestCacheInvalidation(tb.ConnectedTestCase):
 
     @unittest.skip('UNLISTEN statement is not yet supported.')
     async def test_type_cache_invalidation_in_pool(self):
-        await self.con.execute('CREATE DATABASE IF NOT EXISTS testdb')
+        await self.con.execute('CREATE DATABASE testdb')
         pool = await self.create_pool(database='postgres',
                                       min_size=2, max_size=2)
 

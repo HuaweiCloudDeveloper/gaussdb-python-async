@@ -895,8 +895,14 @@ cdef class BaseProtocol(CoreProtocol):
 
         if self.result_type == RESULT_FAILED:
             if isinstance(self.result, dict):
-                exc = apg_exc_base.GaussDBError.new(
-                    self.result, query=self.last_query)
+                sql_state = self.result.get('C')
+                if sql_state and sql_state=='29P06':
+                    exc = apg_exc.InvalidCachedStatementError(
+                        'cached statement plan is invalid'
+                    )
+                else:
+                    exc = apg_exc_base.GaussDBError.new(
+                        self.result, query=self.last_query)
             else:
                 exc = self.result
             waiter.set_exception(exc)

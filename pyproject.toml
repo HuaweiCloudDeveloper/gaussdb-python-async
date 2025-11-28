@@ -31,7 +31,7 @@ dependencies = [
 ]
 
 [project.urls]
-github = "https://github.com/MagicStack/async_gaussdb"
+github = "https://github.com/HuaweiCloudDeveloper/gaussdb-python-async"
 
 [project.optional-dependencies]
 gssauth = [
