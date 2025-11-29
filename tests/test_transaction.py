@@ -160,7 +160,6 @@ class TestTransaction(tb.ConnectedTestCase):
                 async with tr:
                     pass
 
-    @unittest.skip("openGauss doesn't support UNLISTEN statement")
     async def test_transaction_within_manual_transaction(self):
         self.assertIsNone(self.con._top_xact)
         self.assertFalse(self.con.is_in_transaction())
@@ -182,7 +181,9 @@ class TestTransaction(tb.ConnectedTestCase):
         self.assertIsNone(self.con._top_xact)
         self.assertFalse(self.con.is_in_transaction())
 
-    @unittest.skip("openGauss doesn't support UNLISTEN statement")
+    @unittest.skip("""GaussDB handles nested transaction
+                      isolation levels differently from GaussDBSQL;
+                      cannot assert unified behavior.""")
     async def test_isolation_level(self):
         await self.con.reset()
         default_isolation = await self.con.fetchval(

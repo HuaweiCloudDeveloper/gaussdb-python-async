@@ -2674,8 +2674,17 @@ def _detect_server_capabilities(server_version, connection_settings):
         sql_close_all = False
         jit = False
         sql_copy_from_where = False
+    elif hasattr(connection_settings, 'sql_mode') or hasattr(connection_settings, 'session_respool'):
+        #  Standard GaussDBSQL serve
+        advisory_locks = True
+        notifications = False
+        plpgsql = True
+        sql_reset = True
+        sql_close_all = True
+        jit = False
+        sql_copy_from_where = False
     else:
-        # Standard GaussDBSQL server assumed.
+        # Standard Postgresql server assumed.
         advisory_locks = True
         notifications = True
         plpgsql = True
