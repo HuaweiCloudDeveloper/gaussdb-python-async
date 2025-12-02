@@ -33,14 +33,14 @@ cdef enum CodecType:
 
 
 cdef enum ServerDataFormat:
-    PG_FORMAT_ANY = -1
-    PG_FORMAT_TEXT = 0
-    PG_FORMAT_BINARY = 1
+    GAUSSDB_FORMAT_ANY = -1
+    GAUSSDB_FORMAT_TEXT = 0
+    GAUSSDB_FORMAT_BINARY = 1
 
 
 cdef enum ClientExchangeFormat:
-    PG_XFORMAT_OBJECT = 1
-    PG_XFORMAT_TUPLE = 2
+    GAUSSDB_XFORMAT_OBJECT = 1
+    GAUSSDB_XFORMAT_TUPLE = 2
 
 
 cdef class Codec:

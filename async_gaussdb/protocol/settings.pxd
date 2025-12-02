@@ -5,7 +5,7 @@
 # the Apache 2.0 License: http://www.apache.org/licenses/LICENSE-2.0
 
 
-cdef class ConnectionSettings(pgproto.CodecContext):
+cdef class ConnectionSettings(gaussdbproto.CodecContext):
     cdef:
         str _encoding
         object _codec

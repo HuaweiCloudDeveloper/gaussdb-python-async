@@ -235,8 +235,8 @@ setuptools.setup(
     version=VERSION,
     ext_modules=[
         setuptools.extension.Extension(
-            "async_gaussdb.pgproto.pgproto",
-            ["async_gaussdb/pgproto/pgproto.pyx"],
+            "async_gaussdb.gaussdbproto.gaussdbproto",
+            ["async_gaussdb/gaussdbproto/gaussdbproto.pyx"],
             extra_compile_args=CFLAGS,
             extra_link_args=LDFLAGS),
 
@@ -244,7 +244,7 @@ setuptools.setup(
             "async_gaussdb.protocol.protocol",
             ["async_gaussdb/protocol/record/recordobj.c",
              "async_gaussdb/protocol/protocol.pyx"],
-            include_dirs=['async_gaussdb/pgproto/'],
+            include_dirs=['async_gaussdb/gaussdbproto/'],
             extra_compile_args=CFLAGS,
             extra_link_args=LDFLAGS),
     ],

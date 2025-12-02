@@ -8,18 +8,18 @@
 from libc.stdint cimport int16_t, int32_t, uint16_t, \
                          uint32_t, int64_t, uint64_t
 
-from async_gaussdb.pgproto.debug cimport PG_DEBUG
+from async_gaussdb.gaussdbproto.debug cimport GAUSSDB_DEBUG
 
-from async_gaussdb.pgproto.pgproto cimport (
+from async_gaussdb.gaussdbproto.gaussdbproto cimport (
     WriteBuffer,
     ReadBuffer,
     FRBuffer,
 )
 
-from async_gaussdb.pgproto cimport pgproto
+from async_gaussdb.gaussdbproto cimport gaussdbproto
 
 include "consts.pxi"
-include "pgtypes.pxi"
+include "gaussdbtypes.pxi"
 
 include "codecs/base.pxd"
 include "settings.pxd"

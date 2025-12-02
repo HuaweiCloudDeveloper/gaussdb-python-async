@@ -1,3 +1,0 @@
-[submodule "async_gaussdb/pgproto"]
-	path = async_gaussdb/pgproto
-	url = https://github.com/MagicStack/py-pgproto.git

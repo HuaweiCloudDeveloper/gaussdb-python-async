@@ -17,10 +17,10 @@ from typing import (
 )
 from typing_extensions import TypeAlias
 
-import async_gaussdb.pgproto.pgproto
+import async_gaussdb.gaussdbproto.gaussdbproto
 
 from ..connect_utils import _ConnectionParameters
-from ..pgproto.pgproto import WriteBuffer
+from ..gaussdbproto.gaussdbproto import WriteBuffer
 from ..types import Attribute, Type
 
 _T = TypeVar('_T')
@@ -40,7 +40,7 @@ NO_TIMEOUT: Final[_NoTimeoutType]
 hashlib_md5 = md5
 
 @final
-class ConnectionSettings(async_gaussdb.pgproto.pgproto.CodecContext):
+class ConnectionSettings(async_gaussdb.gaussdbproto.gaussdbproto.CodecContext):
     __pyx_vtable__: Any
     def __init__(self, conn_key: object) -> None: ...
     def add_python_codec(

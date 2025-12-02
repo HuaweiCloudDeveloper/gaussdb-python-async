@@ -58,5 +58,5 @@ cdef dict ENCODINGS_MAP = {
 }
 
 
-cdef get_python_encoding(pg_encoding):
-    return ENCODINGS_MAP.get(pg_encoding.lower(), pg_encoding.lower())
+cdef get_python_encoding(gaussdb_encoding):
+    return ENCODINGS_MAP.get(gaussdb_encoding.lower(), gaussdb_encoding.lower())

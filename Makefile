@@ -10,9 +10,9 @@ all: compile
 
 clean:
 	rm -fr dist/ doc/_build/
-	rm -fr async_gaussdb/pgproto/*.c async_gaussdb/pgproto/*.html
-	rm -fr async_gaussdb/pgproto/codecs/*.html
-	rm -fr async_gaussdb/pgproto/*.so
+	rm -fr async_gaussdb/gaussdbproto/*.c async_gaussdb/gaussdbproto/*.html
+	rm -fr async_gaussdb/gaussdbproto/codecs/*.html
+	rm -fr async_gaussdb/gaussdbproto/*.so
 	rm -fr async_gaussdb/protocol/*.c async_gaussdb/protocol/*.html
 	rm -fr async_gaussdb/protocol/*.so build *.egg-info
 	rm -fr async_gaussdb/protocol/codecs/*.html

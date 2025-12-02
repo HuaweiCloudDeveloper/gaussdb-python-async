@@ -56,10 +56,10 @@ cdef class CoreProtocol:
         cdef:
             char mtype
             ProtocolState state
-            pgproto.take_message_method take_message = \
-                <pgproto.take_message_method>self.buffer.take_message
-            pgproto.get_message_type_method get_message_type= \
-                <pgproto.get_message_type_method>self.buffer.get_message_type
+            gaussdbproto.take_message_method take_message = \
+                <gaussdbproto.take_message_method>self.buffer.take_message
+            gaussdbproto.get_message_type_method get_message_type= \
+                <gaussdbproto.get_message_type_method>self.buffer.get_message_type
 
         while take_message(self.buffer) == 1:
             mtype = get_message_type(self.buffer)
@@ -503,17 +503,17 @@ cdef class CoreProtocol:
             list rows
 
             decode_row_method decoder = <decode_row_method>self._decode_row
-            pgproto.try_consume_message_method try_consume_message = \
-                <pgproto.try_consume_message_method>buf.try_consume_message
-            pgproto.take_message_type_method take_message_type = \
-                <pgproto.take_message_type_method>buf.take_message_type
+            gaussdbproto.try_consume_message_method try_consume_message = \
+                <gaussdbproto.try_consume_message_method>buf.try_consume_message
+            gaussdbproto.take_message_type_method take_message_type = \
+                <gaussdbproto.take_message_type_method>buf.take_message_type
 
             const char* cbuf
             ssize_t cbuf_len
             object row
             bytes mem
 
-        if PG_DEBUG:
+        if GAUSSDB_DEBUG:
             if buf.get_message_type() != b'D':
                 raise apg_exc.InternalClientError(
                     '_parse_data_msgs: first message is not "D"')
@@ -523,7 +523,7 @@ cdef class CoreProtocol:
                 buf.discard_message()
             return
 
-        if PG_DEBUG:
+        if GAUSSDB_DEBUG:
             if type(self.result) is not list:
                 raise apg_exc.InternalClientError(
                     '_parse_data_msgs: result is not a list, but {!r}'.

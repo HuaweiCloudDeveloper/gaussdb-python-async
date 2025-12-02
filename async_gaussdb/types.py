@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import typing
 
-from async_gaussdb.pgproto.types import (
+from async_gaussdb.gaussdbproto.types import (
     BitString, Point, Path, Polygon,
     Box, Line, LineSegment, Circle,
 )

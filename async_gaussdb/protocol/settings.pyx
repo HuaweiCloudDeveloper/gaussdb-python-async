@@ -9,7 +9,7 @@ from async_gaussdb import exceptions
 
 
 @cython.final
-cdef class ConnectionSettings(pgproto.CodecContext):
+cdef class ConnectionSettings(gaussdbproto.CodecContext):
 
     def __cinit__(self):
         self._encoding = 'utf-8'
@@ -43,14 +43,14 @@ cdef class ConnectionSettings(pgproto.CodecContext):
             ClientExchangeFormat xformat
 
         if format == 'binary':
-            _format = PG_FORMAT_BINARY
-            xformat = PG_XFORMAT_OBJECT
+            _format = GAUSSDB_FORMAT_BINARY
+            xformat = GAUSSDB_XFORMAT_OBJECT
         elif format == 'text':
-            _format = PG_FORMAT_TEXT
-            xformat = PG_XFORMAT_OBJECT
+            _format = GAUSSDB_FORMAT_TEXT
+            xformat = GAUSSDB_XFORMAT_OBJECT
         elif format == 'tuple':
-            _format = PG_FORMAT_ANY
-            xformat = PG_XFORMAT_TUPLE
+            _format = GAUSSDB_FORMAT_ANY
+            xformat = GAUSSDB_XFORMAT_TUPLE
         else:
             raise exceptions.InterfaceError(
                 'invalid `format` argument, expected {}, got {!r}'.format(
@@ -74,11 +74,11 @@ cdef class ConnectionSettings(pgproto.CodecContext):
             ServerDataFormat _format
 
         if format is None:
-            _format = PG_FORMAT_ANY
+            _format = GAUSSDB_FORMAT_ANY
         elif format == 'binary':
-            _format = PG_FORMAT_BINARY
+            _format = GAUSSDB_FORMAT_BINARY
         elif format == 'text':
-            _format = PG_FORMAT_TEXT
+            _format = GAUSSDB_FORMAT_TEXT
         else:
             raise exceptions.InterfaceError(
                 'invalid `format` argument, expected {}, got {!r}'.format(
@@ -89,7 +89,7 @@ cdef class ConnectionSettings(pgproto.CodecContext):
                                                  typekind, alias_to, _format)
 
     cpdef inline Codec get_data_codec(self, uint32_t oid,
-                                      ServerDataFormat format=PG_FORMAT_ANY,
+                                      ServerDataFormat format=GAUSSDB_FORMAT_ANY,
                                       bint ignore_custom_codec=False):
         return self._data_codecs.get_codec(oid, format, ignore_custom_codec)
 

@@ -1,0 +1,3 @@
+[submodule "async_gaussdb/gaussdbproto"]
+	path = async_gaussdb/gaussdbproto
+	url = https://github.com/MagicStack/py-gaussdbproto.git

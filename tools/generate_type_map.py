@@ -113,7 +113,7 @@ async def runner(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='generate protocol/pgtypes.pxi from pg_catalog.pg_types')
+        description='generate protocol/gaussdbtypes.pxi from pg_catalog.pg_types')
     parser.add_argument(
         '--gaussdbhost', type=str, default='127.0.0.1',
         help='GaussDBSQL server host')

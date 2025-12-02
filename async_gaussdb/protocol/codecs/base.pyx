@@ -76,28 +76,28 @@ cdef class Codec:
             self.encoder = <codec_encode_func>&self.encode_scalar
             self.decoder = <codec_decode_func>&self.decode_scalar
         elif type == CODEC_ARRAY:
-            if format == PG_FORMAT_BINARY:
+            if format == GAUSSDB_FORMAT_BINARY:
                 self.encoder = <codec_encode_func>&self.encode_array
                 self.decoder = <codec_decode_func>&self.decode_array
             else:
                 self.encoder = <codec_encode_func>&self.encode_array_text
                 self.decoder = <codec_decode_func>&self.decode_array_text
         elif type == CODEC_RANGE:
-            if format != PG_FORMAT_BINARY:
+            if format != GAUSSDB_FORMAT_BINARY:
                 raise exceptions.UnsupportedClientFeatureError(
                     'cannot decode type "{}"."{}": text encoding of '
                     'range types is not supported'.format(schema, name))
             self.encoder = <codec_encode_func>&self.encode_range
             self.decoder = <codec_decode_func>&self.decode_range
         elif type == CODEC_MULTIRANGE:
-            if format != PG_FORMAT_BINARY:
+            if format != GAUSSDB_FORMAT_BINARY:
                 raise exceptions.UnsupportedClientFeatureError(
                     'cannot decode type "{}"."{}": text encoding of '
                     'range types is not supported'.format(schema, name))
             self.encoder = <codec_encode_func>&self.encode_multirange
             self.decoder = <codec_decode_func>&self.decode_multirange
         elif type == CODEC_COMPOSITE:
-            if format != PG_FORMAT_BINARY:
+            if format != GAUSSDB_FORMAT_BINARY:
                 raise exceptions.UnsupportedClientFeatureError(
                     'cannot decode type "{}"."{}": text encoding of '
                     'composite types is not supported'.format(schema, name))
@@ -205,15 +205,15 @@ cdef class Codec:
     cdef encode_in_python(self, ConnectionSettings settings, WriteBuffer buf,
                           object obj):
         data = self.py_encoder(obj)
-        if self.xformat == PG_XFORMAT_OBJECT:
-            if self.format == PG_FORMAT_BINARY:
-                pgproto.bytea_encode(settings, buf, data)
-            elif self.format == PG_FORMAT_TEXT:
-                pgproto.text_encode(settings, buf, data)
+        if self.xformat == GAUSSDB_XFORMAT_OBJECT:
+            if self.format == GAUSSDB_FORMAT_BINARY:
+                gaussdbproto.bytea_encode(settings, buf, data)
+            elif self.format == GAUSSDB_FORMAT_TEXT:
+                gaussdbproto.text_encode(settings, buf, data)
             else:
                 raise exceptions.InternalClientError(
                     'unexpected data format: {}'.format(self.format))
-        elif self.xformat == PG_XFORMAT_TUPLE:
+        elif self.xformat == GAUSSDB_XFORMAT_TUPLE:
             if self.base_codec is not None:
                 self.base_codec.encode(settings, buf, data)
             else:
@@ -307,15 +307,15 @@ cdef class Codec:
 
     cdef decode_in_python(self, ConnectionSettings settings,
                           FRBuffer *buf):
-        if self.xformat == PG_XFORMAT_OBJECT:
-            if self.format == PG_FORMAT_BINARY:
-                data = pgproto.bytea_decode(settings, buf)
-            elif self.format == PG_FORMAT_TEXT:
-                data = pgproto.text_decode(settings, buf)
+        if self.xformat == GAUSSDB_XFORMAT_OBJECT:
+            if self.format == GAUSSDB_FORMAT_BINARY:
+                data = gaussdbproto.bytea_decode(settings, buf)
+            elif self.format == GAUSSDB_FORMAT_TEXT:
+                data = gaussdbproto.text_decode(settings, buf)
             else:
                 raise exceptions.InternalClientError(
                     'unexpected data format: {}'.format(self.format))
-        elif self.xformat == PG_XFORMAT_TUPLE:
+        elif self.xformat == GAUSSDB_XFORMAT_TUPLE:
             if self.base_codec is not None:
                 data = self.base_codec.decode(settings, buf)
             else:
@@ -374,7 +374,7 @@ cdef class Codec:
             return False
 
     cdef is_binary(self):
-        return self.format == PG_FORMAT_BINARY
+        return self.format == GAUSSDB_FORMAT_BINARY
 
     def __repr__(self):
         return '<Codec oid={} elem_oid={} core={}>'.format(
@@ -391,7 +391,7 @@ cdef class Codec:
         cdef Codec codec
         codec = Codec(oid)
         codec.init(name, schema, 'array', CODEC_ARRAY, element_codec.format,
-                   PG_XFORMAT_OBJECT, NULL, NULL, None, None, None,
+                   GAUSSDB_XFORMAT_OBJECT, NULL, NULL, None, None, None,
                    element_codec, None, None, None, element_delimiter)
         return codec
 
@@ -403,7 +403,7 @@ cdef class Codec:
         cdef Codec codec
         codec = Codec(oid)
         codec.init(name, schema, 'range', CODEC_RANGE, element_codec.format,
-                   PG_XFORMAT_OBJECT, NULL, NULL, None, None, None,
+                   GAUSSDB_XFORMAT_OBJECT, NULL, NULL, None, None, None,
                    element_codec, None, None, None, 0)
         return codec
 
@@ -415,7 +415,7 @@ cdef class Codec:
         cdef Codec codec
         codec = Codec(oid)
         codec.init(name, schema, 'multirange', CODEC_MULTIRANGE,
-                   element_codec.format, PG_XFORMAT_OBJECT, NULL, NULL, None,
+                   element_codec.format, GAUSSDB_XFORMAT_OBJECT, NULL, NULL, None,
                    None, None, element_codec, None, None, None, 0)
         return codec
 
@@ -430,7 +430,7 @@ cdef class Codec:
         cdef Codec codec
         codec = Codec(oid)
         codec.init(name, schema, 'composite', CODEC_COMPOSITE,
-                   format, PG_XFORMAT_OBJECT, NULL, NULL, None, None, None,
+                   format, GAUSSDB_XFORMAT_OBJECT, NULL, NULL, None, None, None,
                    None, element_type_oids, element_names, element_codecs, 0)
         return codec
 
@@ -502,7 +502,7 @@ cdef class DataCodecConfig:
         for ti in types:
             oid = ti['oid']
 
-            if self.get_codec(oid, PG_FORMAT_ANY) is not None:
+            if self.get_codec(oid, GAUSSDB_FORMAT_ANY) is not None:
                 continue
 
             name = ti['name']
@@ -523,7 +523,7 @@ cdef class DataCodecConfig:
                     name = name[1:]
                 name = '{}[]'.format(name)
 
-                elem_codec = self.get_codec(array_element_oid, PG_FORMAT_ANY)
+                elem_codec = self.get_codec(array_element_oid, GAUSSDB_FORMAT_ANY)
                 if elem_codec is None:
                     elem_codec = self.declare_fallback_codec(
                         array_element_oid, ti['elemtype_name'], schema)
@@ -545,11 +545,11 @@ cdef class DataCodecConfig:
                 has_text_elements = False
 
                 for typoid in comp_type_attrs:
-                    elem_codec = self.get_codec(typoid, PG_FORMAT_ANY)
+                    elem_codec = self.get_codec(typoid, GAUSSDB_FORMAT_ANY)
                     if elem_codec is None:
                         raise exceptions.InternalClientError(
                             f'no codec for composite attribute type {typoid}')
-                    if elem_codec.format is PG_FORMAT_TEXT:
+                    if elem_codec.format is GAUSSDB_FORMAT_TEXT:
                         has_text_elements = True
                     comp_elem_codecs.append(elem_codec)
 
@@ -560,9 +560,9 @@ cdef class DataCodecConfig:
                 # If at least one element is text-encoded, we must
                 # encode the whole composite as text.
                 if has_text_elements:
-                    elem_format = PG_FORMAT_TEXT
+                    elem_format = GAUSSDB_FORMAT_TEXT
                 else:
-                    elem_format = PG_FORMAT_BINARY
+                    elem_format = GAUSSDB_FORMAT_BINARY
 
                 self._derived_type_codecs[oid, elem_format] = \
                     Codec.new_composite_codec(
@@ -576,7 +576,7 @@ cdef class DataCodecConfig:
                     raise exceptions.InternalClientError(
                         f'type record missing base type for domain {oid}')
 
-                elem_codec = self.get_codec(base_type, PG_FORMAT_ANY)
+                elem_codec = self.get_codec(base_type, GAUSSDB_FORMAT_ANY)
                 if elem_codec is None:
                     elem_codec = self.declare_fallback_codec(
                         base_type, ti['basetype_name'], schema)
@@ -590,7 +590,7 @@ cdef class DataCodecConfig:
                     raise exceptions.InternalClientError(
                         f'type record missing base type for range {oid}')
 
-                elem_codec = self.get_codec(range_subtype_oid, PG_FORMAT_ANY)
+                elem_codec = self.get_codec(range_subtype_oid, GAUSSDB_FORMAT_ANY)
                 if elem_codec is None:
                     elem_codec = self.declare_fallback_codec(
                         range_subtype_oid, ti['range_subtype_name'], schema)
@@ -605,7 +605,7 @@ cdef class DataCodecConfig:
                     raise exceptions.InternalClientError(
                         f'type record missing base type for multirange {oid}')
 
-                elem_codec = self.get_codec(range_subtype_oid, PG_FORMAT_ANY)
+                elem_codec = self.get_codec(range_subtype_oid, GAUSSDB_FORMAT_ANY)
                 if elem_codec is None:
                     elem_codec = self.declare_fallback_codec(
                         range_subtype_oid, ti['range_subtype_name'], schema)
@@ -616,7 +616,7 @@ cdef class DataCodecConfig:
             elif ti['kind'] == b'e':
                 # Enum types are essentially text
                 self._set_builtin_type_codec(oid, name, schema, 'scalar',
-                                             TEXTOID, PG_FORMAT_ANY)
+                                             TEXTOID, GAUSSDB_FORMAT_ANY)
             else:
                 self.declare_fallback_codec(oid, name, schema)
 
@@ -636,13 +636,13 @@ cdef class DataCodecConfig:
         if typeinfos:
             self.add_types(typeinfos)
 
-        if format == PG_FORMAT_ANY:
-            formats = (PG_FORMAT_TEXT, PG_FORMAT_BINARY)
+        if format == GAUSSDB_FORMAT_ANY:
+            formats = (GAUSSDB_FORMAT_TEXT, GAUSSDB_FORMAT_BINARY)
         else:
             formats = (format,)
 
         for fmt in formats:
-            if xformat == PG_XFORMAT_TUPLE:
+            if xformat == GAUSSDB_XFORMAT_TUPLE:
                 if typekind == "scalar":
                     core_codec = get_core_codec(oid, fmt, xformat)
                     if core_codec is None:
@@ -666,12 +666,12 @@ cdef class DataCodecConfig:
                     typename))
 
     def remove_python_codec(self, typeoid, typename, typeschema):
-        for fmt in (PG_FORMAT_BINARY, PG_FORMAT_TEXT):
+        for fmt in (GAUSSDB_FORMAT_BINARY, GAUSSDB_FORMAT_TEXT):
             self._custom_type_codecs.pop((typeoid, fmt), None)
         self.clear_type_cache()
 
     def _set_builtin_type_codec(self, typeoid, typename, typeschema, typekind,
-                                alias_to, format=PG_FORMAT_ANY):
+                                alias_to, format=GAUSSDB_FORMAT_ANY):
         cdef:
             Codec codec
             Codec target_codec
@@ -679,8 +679,8 @@ cdef class DataCodecConfig:
             uint32_t alias_oid = 0
             bint codec_set = False
 
-        if format == PG_FORMAT_ANY:
-            formats = (PG_FORMAT_BINARY, PG_FORMAT_TEXT)
+        if format == GAUSSDB_FORMAT_ANY:
+            formats = (GAUSSDB_FORMAT_BINARY, GAUSSDB_FORMAT_TEXT)
         else:
             formats = (format,)
 
@@ -708,9 +708,9 @@ cdef class DataCodecConfig:
             codec_set = True
 
         if not codec_set:
-            if format == PG_FORMAT_BINARY:
+            if format == GAUSSDB_FORMAT_BINARY:
                 codec_str = 'binary'
-            elif format == PG_FORMAT_TEXT:
+            elif format == GAUSSDB_FORMAT_TEXT:
                 codec_str = 'text'
             else:
                 codec_str = 'text or binary'
@@ -720,7 +720,7 @@ cdef class DataCodecConfig:
                 f'there is no {codec_str} codec for {alias_to}')
 
     def set_builtin_type_codec(self, typeoid, typename, typeschema, typekind,
-                               alias_to, format=PG_FORMAT_ANY):
+                               alias_to, format=GAUSSDB_FORMAT_ANY):
         self._set_builtin_type_codec(typeoid, typename, typeschema, typekind,
                                      alias_to, format)
         self.clear_type_cache()
@@ -747,9 +747,9 @@ cdef class DataCodecConfig:
             # using Connection.set_type_codec().
             #
             self._set_builtin_type_codec(oid, name, schema, 'scalar',
-                                         TEXTOID, PG_FORMAT_TEXT)
+                                         TEXTOID, GAUSSDB_FORMAT_TEXT)
 
-            codec = self.get_codec(oid, PG_FORMAT_TEXT)
+            codec = self.get_codec(oid, GAUSSDB_FORMAT_TEXT)
 
         return codec
 
@@ -757,16 +757,16 @@ cdef class DataCodecConfig:
                                 bint ignore_custom_codec=False):
         cdef Codec codec
 
-        if format == PG_FORMAT_ANY:
+        if format == GAUSSDB_FORMAT_ANY:
             codec = self.get_codec(
-                oid, PG_FORMAT_BINARY, ignore_custom_codec)
+                oid, GAUSSDB_FORMAT_BINARY, ignore_custom_codec)
             if codec is None:
                 codec = self.get_codec(
-                    oid, PG_FORMAT_TEXT, ignore_custom_codec)
+                    oid, GAUSSDB_FORMAT_TEXT, ignore_custom_codec)
             return codec
         else:
             if not ignore_custom_codec:
-                codec = self.get_custom_codec(oid, PG_FORMAT_ANY)
+                codec = self.get_custom_codec(oid, GAUSSDB_FORMAT_ANY)
                 if codec is not None:
                     if codec.format != format:
                         # The codec for this OID has been overridden by
@@ -792,10 +792,10 @@ cdef class DataCodecConfig:
     ):
         cdef Codec codec
 
-        if format == PG_FORMAT_ANY:
-            codec = self.get_custom_codec(oid, PG_FORMAT_BINARY)
+        if format == GAUSSDB_FORMAT_ANY:
+            codec = self.get_custom_codec(oid, GAUSSDB_FORMAT_BINARY)
             if codec is None:
-                codec = self.get_custom_codec(oid, PG_FORMAT_TEXT)
+                codec = self.get_custom_codec(oid, GAUSSDB_FORMAT_TEXT)
         else:
             codec = self._custom_type_codecs.get((oid, format))
 
@@ -804,15 +804,15 @@ cdef class DataCodecConfig:
 
 cdef inline Codec get_core_codec(
         uint32_t oid, ServerDataFormat format,
-        ClientExchangeFormat xformat=PG_XFORMAT_OBJECT):
+        ClientExchangeFormat xformat=GAUSSDB_XFORMAT_OBJECT):
     cdef:
         void *ptr = NULL
 
     if oid > MAXSUPPORTEDOID:
         return None
-    if format == PG_FORMAT_BINARY:
+    if format == GAUSSDB_FORMAT_BINARY:
         ptr = binary_codec_map[oid * xformat]
-    elif format == PG_FORMAT_TEXT:
+    elif format == GAUSSDB_FORMAT_TEXT:
         ptr = text_codec_map[oid * xformat]
 
     if ptr is NULL:
@@ -823,15 +823,15 @@ cdef inline Codec get_core_codec(
 
 cdef inline Codec get_any_core_codec(
         uint32_t oid, ServerDataFormat format,
-        ClientExchangeFormat xformat=PG_XFORMAT_OBJECT):
-    """A version of get_core_codec that accepts PG_FORMAT_ANY."""
+        ClientExchangeFormat xformat=GAUSSDB_XFORMAT_OBJECT):
+    """A version of get_core_codec that accepts GAUSSDB_FORMAT_ANY."""
     cdef:
         Codec codec
 
-    if format == PG_FORMAT_ANY:
-        codec = get_core_codec(oid, PG_FORMAT_BINARY, xformat)
+    if format == GAUSSDB_FORMAT_ANY:
+        codec = get_core_codec(oid, GAUSSDB_FORMAT_BINARY, xformat)
         if codec is None:
-            codec = get_core_codec(oid, PG_FORMAT_TEXT, xformat)
+            codec = get_core_codec(oid, GAUSSDB_FORMAT_TEXT, xformat)
     else:
         codec = get_core_codec(oid, format, xformat)
 
@@ -846,7 +846,7 @@ cdef register_core_codec(uint32_t oid,
                          encode_func encode,
                          decode_func decode,
                          ServerDataFormat format,
-                         ClientExchangeFormat xformat=PG_XFORMAT_OBJECT):
+                         ClientExchangeFormat xformat=GAUSSDB_XFORMAT_OBJECT):
 
     if oid > MAXSUPPORTEDOID:
         raise exceptions.InternalClientError(
@@ -866,9 +866,9 @@ cdef register_core_codec(uint32_t oid,
                encode, decode, None, None, None, None, None, None, None, 0)
     cpython.Py_INCREF(codec)  # immortalize
 
-    if format == PG_FORMAT_BINARY:
+    if format == GAUSSDB_FORMAT_BINARY:
         binary_codec_map[oid * xformat] = <void*>codec
-    elif format == PG_FORMAT_TEXT:
+    elif format == GAUSSDB_FORMAT_TEXT:
         text_codec_map[oid * xformat] = <void*>codec
     else:
         raise exceptions.InternalClientError(
@@ -886,7 +886,7 @@ cdef register_extra_codec(str name,
     kind = 'scalar'
 
     codec = Codec(INVALIDOID)
-    codec.init(name, None, kind, CODEC_C, format, PG_XFORMAT_OBJECT,
+    codec.init(name, None, kind, CODEC_C, format, GAUSSDB_XFORMAT_OBJECT,
                encode, decode, None, None, None, None, None, None, None, 0)
     EXTRA_CODECS[name, format] = codec
 

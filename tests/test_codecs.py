@@ -392,7 +392,7 @@ type_samples = [
     ('txid_snapshot', 'txid_snapshot', [
         "100:1000:100,200,300,400"
     ]),
-    ('pg_snapshot', 'pg_snapshot', [
+    ('gaussdb_snapshot', 'gaussdb_snapshot', [
         (100, 1000, (100, 200, 300, 400))
     ], (13, 0)),
     ('xid', 'xid', (
