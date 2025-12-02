@@ -572,7 +572,7 @@ class TestPrepare(tb.ConnectedTestCase):
                 'the server expects 0 arguments for this query, 1 was passed'):
             await self.con.fetchval('SELECT 1', 1)
 
-    async def test_prepare_31_pgbouncer_note(self):
+    async def test_prepare_31_gsbouncer_note(self):
         try:
             await self.con.execute("""
                 DO $$ BEGIN

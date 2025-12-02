@@ -19,8 +19,8 @@ which provides methods to run queries and manage transactions.
 
     async def main():
         # Establish a connection to an existing database named "test"
-        # as a "postgres" user.
-        conn = await async_gaussdb.connect('postgresql://postgres@localhost/test')
+        # as a "root" user.
+        conn = await async_gaussdb.connect('gaussdb://root@localhost/test')
         # Execute a statement to create a new table.
         await conn.execute('''
             CREATE TABLE users(
@@ -49,24 +49,24 @@ which provides methods to run queries and manage transactions.
 
 .. note::
 
-   async_gaussdb uses the native PostgreSQL syntax for query arguments: ``$n``.
+   async_gaussdb uses the native GaussDB syntax for query arguments: ``$n``.
 
 
 
 Type Conversion
 ---------------
 
-async_gaussdb automatically converts PostgreSQL types to the corresponding Python
+async_gaussdb automatically converts GaussDB types to the corresponding Python
 types and vice versa.  All standard data types are supported out of the box,
 including arrays, composite types, range types, enumerations and any
 combination of them.  It is possible to supply codecs for non-standard
 types or override standard codecs.  See :ref:`async_gaussdb-custom-codecs` for
 more information.
 
-The table below shows the correspondence between PostgreSQL and Python types.
+The table below shows the correspondence between GaussDB and Python types.
 
 +----------------------+-----------------------------------------------------+
-| PostgreSQL Type      |  Python Type                                        |
+| GaussDB Type      |  Python Type                                        |
 +======================+=====================================================+
 | ``anyarray``         | :class:`list <python:list>`                         |
 +----------------------+-----------------------------------------------------+
@@ -223,7 +223,7 @@ Example: complex types
 
 The example below shows how to configure async_gaussdb to encode and decode
 Python :class:`complex <python:complex>` values to a custom composite
-type in PostgreSQL.
+type in GaussDB.
 
 .. code-block:: python
 
@@ -370,7 +370,7 @@ be registered on a connection using :meth:`Connection.set_builtin_type_codec()
 
     asyncio.run(run())
 
-.. _hstore: https://www.postgresql.org/docs/current/static/hstore.html
+.. _hstore
 
 
 Transactions
@@ -404,7 +404,6 @@ For server-type type applications, that handle frequent requests and need
 the database connection for a short period time while handling a request,
 the use of a connection pool is recommended.  async_gaussdb provides an advanced
 pool implementation, which eliminates the need to use an external connection
-pooler such as PgBouncer.
 
 To create a connection pool, use the
 :func:`async_gaussdb.create_pool() <async_gaussdb.pool.create_pool>` function.
@@ -440,7 +439,7 @@ Web service that computes the requested power of two.
     async def init_db(app):
         """Initialize a connection pool."""
          app['pool'] = await async_gaussdb.create_pool(database='postgres',
-                                                 user='postgres')
+                                                 user='root')
          yield
          await app['pool'].close()
 

@@ -20,9 +20,9 @@ import unittest
 
 
 import async_gaussdb
-from async_gaussdb import cluster as pg_cluster
-from async_gaussdb import connection as pg_connection
-from async_gaussdb import pool as pg_pool
+from async_gaussdb import cluster as gaussdb_cluster
+from async_gaussdb import connection as gaussdb_connection
+from async_gaussdb import pool as gaussdb_pool
 
 from . import fuzzer
 
@@ -234,7 +234,7 @@ def _get_initdb_options(initdb_options=None):
 
     # Make the default superuser name stable.
     if 'username' not in initdb_options:
-        initdb_options['username'] = 'postgres'
+        initdb_options['username'] = 'root'
 
     return initdb_options
 
@@ -243,13 +243,13 @@ def _init_default_cluster(initdb_options=None):
     global _default_cluster
 
     if _default_cluster is None:
-        pg_host = os.environ.get('PGHOST')
-        if pg_host:
+        gaussdb_host = os.environ.get('GAUSSDBHOST')
+        if gaussdb_host:
             # Using existing cluster, assuming it is initialized and running
-            _default_cluster = pg_cluster.RunningCluster()
+            _default_cluster = gaussdb_cluster.RunningCluster()
         else:
             _default_cluster = _init_cluster(
-                pg_cluster.TempCluster,
+                gaussdb_cluster.TempCluster,
                 cluster_kwargs={
                     "data_dir_suffix": ".apgtest",
                 },
@@ -275,8 +275,8 @@ def create_pool(dsn=None, *,
                 setup=None,
                 init=None,
                 loop=None,
-                pool_class=pg_pool.Pool,
-                connection_class=pg_connection.Connection,
+                pool_class=gaussdb_pool.Pool,
+                connection_class=gaussdb_connection.Connection,
                 record_class=async_gaussdb.Record,
                 **connect_kwargs):
     return pool_class(
@@ -302,7 +302,7 @@ class ClusterTestCase(TestCase):
             'log_connections': 'on'
         }
 
-        if cls.cluster.get_pg_version() >= (11, 0):
+        if cls.cluster.get_gaussdb_version() >= (11, 0):
             # JITting messes up timing tests, and
             # is not essential for testing.
             settings['jit'] = 'off'
@@ -349,17 +349,17 @@ class ClusterTestCase(TestCase):
         if kwargs.get('dsn'):
             conn_spec.pop('host')
         conn_spec.update(kwargs)
-        if not os.environ.get('PGHOST') and not kwargs.get('dsn'):
+        if not os.environ.get('GAUSSDBHOST') and not kwargs.get('dsn'):
             if 'database' not in conn_spec:
                 conn_spec['database'] = 'postgres'
             if 'user' not in conn_spec:
-                conn_spec['user'] = 'postgres'
+                conn_spec['user'] = 'root'
         return conn_spec
 
     @classmethod
     def connect(cls, **kwargs):
         conn_spec = cls.get_connection_spec(kwargs)
-        return pg_connection.connect(**conn_spec, loop=cls.loop)
+        return gaussdb_connection.connect(**conn_spec, loop=cls.loop)
 
     def setUp(self):
         super().setUp()
@@ -371,8 +371,8 @@ class ClusterTestCase(TestCase):
             pool.terminate()
         self._pools = []
 
-    def create_pool(self, pool_class=pg_pool.Pool,
-                    connection_class=pg_connection.Connection, **kwargs):
+    def create_pool(self, pool_class=gaussdb_pool.Pool,
+                    connection_class=gaussdb_connection.Connection, **kwargs):
         conn_spec = self.get_connection_spec(kwargs)
         pool = create_pool(loop=self.loop, pool_class=pool_class,
                            connection_class=connection_class, **conn_spec)
@@ -457,7 +457,7 @@ class HotStandbyTestCase(ClusterTestCase):
 
     @classmethod
     def setup_cluster(cls):
-        cls.master_cluster = cls.new_cluster(pg_cluster.TempCluster)
+        cls.master_cluster = cls.new_cluster(gaussdb_cluster.TempCluster)
         cls.start_cluster(
             cls.master_cluster,
             server_settings={
@@ -471,7 +471,7 @@ class HotStandbyTestCase(ClusterTestCase):
         try:
             con = cls.loop.run_until_complete(
                 cls.master_cluster.connect(
-                    database='postgres', user='postgres', loop=cls.loop))
+                    database='postgres', user='root', loop=cls.loop))
 
             cls.loop.run_until_complete(
                 con.execute('''
@@ -483,7 +483,7 @@ class HotStandbyTestCase(ClusterTestCase):
             conn_spec = cls.master_cluster.get_connection_spec()
 
             cls.standby_cluster = cls.new_cluster(
-                pg_cluster.HotStandbyCluster,
+                gaussdb_cluster.HotStandbyCluster,
                 cluster_kwargs={
                     'master': conn_spec,
                     'replication_user': 'replication'
@@ -506,11 +506,11 @@ class HotStandbyTestCase(ClusterTestCase):
         if kwargs.get('dsn'):
             conn_spec.pop('host')
         conn_spec.update(kwargs)
-        if not os.environ.get('PGHOST') and not kwargs.get('dsn'):
+        if not os.environ.get('GAUSSDBHOST') and not kwargs.get('dsn'):
             if 'database' not in conn_spec:
                 conn_spec['database'] = 'postgres'
             if 'user' not in conn_spec:
-                conn_spec['user'] = 'postgres'
+                conn_spec['user'] = 'root'
         return conn_spec
 
     @classmethod
@@ -532,7 +532,7 @@ class HotStandbyTestCase(ClusterTestCase):
     @classmethod
     def connect_primary(cls, **kwargs):
         conn_spec = cls.get_cluster_connection_spec(cls.master_cluster, kwargs)
-        return pg_connection.connect(**conn_spec, loop=cls.loop)
+        return gaussdb_connection.connect(**conn_spec, loop=cls.loop)
 
     @classmethod
     def connect_standby(cls, **kwargs):
@@ -540,4 +540,4 @@ class HotStandbyTestCase(ClusterTestCase):
             cls.standby_cluster,
             kwargs
         )
-        return pg_connection.connect(**conn_spec, loop=cls.loop)
+        return gaussdb_connection.connect(**conn_spec, loop=cls.loop)

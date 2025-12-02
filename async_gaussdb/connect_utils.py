@@ -82,9 +82,9 @@ _system = platform.uname().system
 
 
 if _system == 'Windows':
-    PGPASSFILE = 'pgpass.conf'
+    GAUSSDBPASSFILE = 'gaussdbpass.conf'
 else:
-    PGPASSFILE = '.pgpass'
+    GAUSSDBPASSFILE = '.gaussdbpass'
 
 
 def _read_password_file(passfile: pathlib.Path) \
@@ -130,13 +130,13 @@ def _read_password_file(passfile: pathlib.Path) \
     return passtab
 
 
-def _read_password_from_pgpass(
+def _read_password_from_gaussdbpass(
         *, passfile: typing.Optional[pathlib.Path],
         hosts: typing.List[str],
         ports: typing.List[int],
         database: str,
         user: str):
-    """Parse the pgpass file and return the matching password.
+    """Parse the gaussdbpass file and return the matching password.
 
     :return:
         Password string, if found, ``None`` otherwise.
@@ -194,7 +194,7 @@ def _parse_hostlist(hostlist, port, *, unquote=False):
     hostlist_ports = []
 
     if not port:
-        portspec = os.environ.get('PGPORT')
+        portspec = os.environ.get('GAUSSDBPORT')
         if portspec:
             if ',' in portspec:
                 default_port = [int(p) for p in portspec.split(',')]
@@ -274,7 +274,7 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
                                 direct_tls, server_settings,
                                 target_session_attrs, krbsrvname, gsslib):
     # `auth_hosts` is the version of host information for the purposes
-    # of reading the pgpass file.
+    # of reading the gaussdbpass file.
     auth_hosts = None
     sslcert = sslkey = sslrootcert = sslcrl = sslpassword = None
     ssl_min_protocol_version = ssl_max_protocol_version = None
@@ -283,10 +283,10 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
     if dsn:
         parsed = urllib.parse.urlparse(dsn)
 
-        if parsed.scheme not in {'postgresql', 'postgres', 'gaussdb'}:
+        if parsed.scheme not in {'gaussdb'}:
             raise exceptions.ClientConfigurationError(
                 'invalid DSN: scheme is expected to be either '
-                '"gaussdb" or "postgresql" or "postgres", got {!r}'
+                '"gaussdb", got {!r}'
                 .format(parsed.scheme))
 
         if parsed.netloc:
@@ -416,7 +416,7 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
                     server_settings = {**query, **server_settings}
 
     if not host:
-        hostspec = os.environ.get('PGHOST')
+        hostspec = os.environ.get('GAUSSDBHOST')
         if hostspec:
             host, port = _parse_hostlist(hostspec, port)
 
@@ -426,7 +426,7 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
         if _system == 'Windows':
             host = ['localhost']
         else:
-            host = ['/run/postgresql', '/var/run/postgresql',
+            host = ['/run/gaussdb', '/var/run/gaussdb',
                     '/tmp', '/private/tmp', 'localhost']
 
     if not isinstance(host, (list, tuple)):
@@ -436,7 +436,7 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
         auth_hosts = host
 
     if not port:
-        portspec = os.environ.get('PGPORT')
+        portspec = os.environ.get('GAUSSDBPORT')
         if portspec:
             if ',' in portspec:
                 port = [int(p) for p in portspec.split(',')]
@@ -454,15 +454,15 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
     port = _validate_port_spec(host, port)
 
     if user is None:
-        user = os.getenv('PGUSER')
+        user = os.getenv('GAUSSDBUSER')
         if not user:
             user = getpass.getuser()
 
     if password is None:
-        password = os.getenv('PGPASSWORD')
+        password = os.getenv('GAUSSDBPASSWORD')
 
     if database is None:
-        database = os.getenv('PGDATABASE')
+        database = os.getenv('GAUSSDBDATABASE')
 
     if database is None:
         database = user
@@ -477,19 +477,19 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
 
     if password is None:
         if passfile is None:
-            passfile = os.getenv('PGPASSFILE')
+            passfile = os.getenv('GAUSSDBPASSFILE')
 
         if passfile is None:
             homedir = compat.get_gaussdb_home_directory()
             if homedir:
-                passfile = homedir / PGPASSFILE
+                passfile = homedir / GAUSSDBPASSFILE
             else:
                 passfile = None
         else:
             passfile = pathlib.Path(passfile)
 
         if passfile is not None:
-            password = _read_password_from_pgpass(
+            password = _read_password_from_gaussdbpass(
                 hosts=auth_hosts, ports=port,
                 database=database, user=user,
                 passfile=passfile)
@@ -512,7 +512,7 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
             'could not determine the database address to connect to')
 
     if ssl is None:
-        ssl = os.getenv('PGSSLMODE')
+        ssl = os.getenv('GAUSSDBSSLMODE')
 
     if ssl is None and have_tcp_addrs:
         ssl = 'prefer'
@@ -523,7 +523,7 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
         )
     else:
         if sslnegotiation is None:
-            sslnegotiation = os.environ.get("PGSSLNEGOTIATION")
+            sslnegotiation = os.environ.get("GAUSSDBSSLNEGOTIATION")
 
         if sslnegotiation is not None:
             try:
@@ -557,7 +557,7 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
                 ssl.verify_mode = ssl_module.CERT_NONE
             else:
                 if sslrootcert is None:
-                    sslrootcert = os.getenv('PGSSLROOTCERT')
+                    sslrootcert = os.getenv('GAUSSDBSSLROOTCERT')
                 if sslrootcert:
                     ssl.load_verify_locations(cafile=sslrootcert)
                     ssl.verify_mode = ssl_module.CERT_REQUIRED
@@ -578,7 +578,7 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
                     ):
                         if sslmode > SSLMode.require:
                             if sslrootcert is None:
-                                sslrootcert = '~/.postgresql/root.crt'
+                                sslrootcert = '~/.gaussdb/root.crt'
                                 detail = (
                                     'Could not determine location of user '
                                     'home directory (HOME is either unset, '
@@ -603,7 +603,7 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
                         ssl.verify_mode = ssl_module.CERT_REQUIRED
 
                 if sslcrl is None:
-                    sslcrl = os.getenv('PGSSLCRL')
+                    sslcrl = os.getenv('GAUSSDBSSLCRL')
                 if sslcrl:
                     ssl.load_verify_locations(cafile=sslcrl)
                     ssl.verify_flags |= ssl_module.VERIFY_CRL_CHECK_CHAIN
@@ -622,21 +622,21 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
                                 ssl_module.VERIFY_CRL_CHECK_CHAIN
 
             if sslkey is None:
-                sslkey = os.getenv('PGSSLKEY')
+                sslkey = os.getenv('GAUSSDBSSLKEY')
             if not sslkey:
-                sslkey = _dot_gaussdb_path('postgresql.key')
+                sslkey = _dot_gaussdb_path('gaussdb.key')
                 if sslkey is not None and not sslkey.exists():
                     sslkey = None
             if not sslpassword:
                 sslpassword = ''
             if sslcert is None:
-                sslcert = os.getenv('PGSSLCERT')
+                sslcert = os.getenv('GAUSSDBSSLCERT')
             if sslcert:
                 ssl.load_cert_chain(
                     sslcert, keyfile=sslkey, password=lambda: sslpassword
                 )
             else:
-                sslcert = _dot_gaussdb_path('postgresql.crt')
+                sslcert = _dot_gaussdb_path('gaussdb.crt')
                 if sslcert is not None:
                     try:
                         ssl.load_cert_chain(
@@ -654,7 +654,7 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
                     ssl.keylog_filename = keylogfile
 
             if ssl_min_protocol_version is None:
-                ssl_min_protocol_version = os.getenv('PGSSLMINPROTOCOLVERSION')
+                ssl_min_protocol_version = os.getenv('GAUSSDBSSLMINPROTOCOLVERSION')
             if ssl_min_protocol_version:
                 ssl.minimum_version = _parse_tls_version(
                     ssl_min_protocol_version
@@ -663,7 +663,7 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
                 ssl.minimum_version = _parse_tls_version('TLSv1.2')
 
             if ssl_max_protocol_version is None:
-                ssl_max_protocol_version = os.getenv('PGSSLMAXPROTOCOLVERSION')
+                ssl_max_protocol_version = os.getenv('GAUSSDBSSLMAXPROTOCOLVERSION')
             if ssl_max_protocol_version:
                 ssl.maximum_version = _parse_tls_version(
                     ssl_max_protocol_version
@@ -685,7 +685,7 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
 
     if target_session_attrs is None:
         target_session_attrs = os.getenv(
-            "PGTARGETSESSIONATTRS", SessionAttribute.any
+            "GAUSSDBTARGETSESSIONATTRS", SessionAttribute.any
         )
     try:
         target_session_attrs = SessionAttribute(target_session_attrs)
@@ -699,10 +699,10 @@ def _parse_connect_dsn_and_args(*, dsn, host, port, user,
         ) from None
 
     if krbsrvname is None:
-        krbsrvname = os.getenv('PGKRBSRVNAME')
+        krbsrvname = os.getenv('GAUSSDBKRBSRVNAME')
 
     if gsslib is None:
-        gsslib = os.getenv('PGGSSLIB')
+        gsslib = os.getenv('GAUSSDBGSSLIB')
         if gsslib is None:
             gsslib = 'sspi' if _system == 'Windows' else 'gssapi'
     if gsslib not in {'gssapi', 'sspi'}:
@@ -850,12 +850,12 @@ async def _create_ssl_connection(
         else:
             new_tr = tr
 
-        pg_proto = protocol_factory()
-        pg_proto.is_ssl = do_ssl_upgrade
-        pg_proto.connection_made(new_tr)
-        new_tr.set_protocol(pg_proto)
+        gaussdb_proto = protocol_factory()
+        gaussdb_proto.is_ssl = do_ssl_upgrade
+        gaussdb_proto.connection_made(new_tr)
+        new_tr.set_protocol(gaussdb_proto)
 
-        return new_tr, pg_proto
+        return new_tr, gaussdb_proto
     else:
         conn_factory = functools.partial(
             loop.create_connection, protocol_factory)
@@ -870,9 +870,9 @@ async def _create_ssl_connection(
         tr.close()
 
         try:
-            new_tr, pg_proto = await conn_factory(sock=sock)
-            pg_proto.is_ssl = do_ssl_upgrade
-            return new_tr, pg_proto
+            new_tr, gaussdb_proto = await conn_factory(sock=sock)
+            gaussdb_proto.is_ssl = do_ssl_upgrade
+            return new_tr, gaussdb_proto
         except (Exception, asyncio.CancelledError):
             sock.close()
             raise

@@ -11,9 +11,9 @@ Thank you!
 -->
 
 * **async_gaussdb version**:
-* **PostgreSQL version**:
-* **Do you use a PostgreSQL SaaS?  If so, which?  Can you reproduce
-  the issue with a local PostgreSQL install?**:
+* **GaussDB version**:
+* **Do you use a GaussDB SaaS?  If so, which?  Can you reproduce
+  the issue with a local GaussDB install?**:
 * **Python version**:
 * **Platform**:
 * **Do you use pgbouncer?**:

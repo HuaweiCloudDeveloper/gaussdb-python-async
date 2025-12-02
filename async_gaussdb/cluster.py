@@ -75,21 +75,21 @@ class ClusterError(Exception):
 
 
 class Cluster:
-    def __init__(self, data_dir, *, pg_config_path=None):
+    def __init__(self, data_dir, *, pg_config=None):
         self._data_dir = data_dir
-        self._pg_config_path = pg_config_path
-        self._pg_bin_dir = (
-            os.environ.get('PGINSTALLATION')
-            or os.environ.get('PGBIN')
+        self._pg_config = pg_config
+        self._gaussdb_bin_dir = (
+            os.environ.get('GAUSSDBINSTALLATION')
+            or os.environ.get('GAUSSDBBIN')
         )
-        self._pg_ctl = None
+        self._gs_ctl = None
         self._daemon_pid = None
         self._daemon_process = None
         self._connection_addr = None
         self._connection_spec_override = None
 
-    def get_pg_version(self):
-        return self._pg_version
+    def get_gaussdb_version(self):
+        return self._gaussdb_version
 
     def is_managed(self):
         return True
@@ -98,11 +98,11 @@ class Cluster:
         return self._data_dir
 
     def get_status(self):
-        if self._pg_ctl is None:
+        if self._gs_ctl is None:
             self._init_env()
 
         process = subprocess.run(
-            [self._pg_ctl, 'status', '-D', self._data_dir],
+            [self._gs_ctl, 'status', '-D', self._data_dir],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.stdout, process.stderr
 
@@ -115,13 +115,13 @@ class Cluster:
             r = re.match(r'.*PID\s?:\s+(\d+).*', stdout.decode())
             if not r:
                 raise ClusterError(
-                    'could not parse pg_ctl status output: {}'.format(
+                    'could not parse gs_ctl status output: {}'.format(
                         stdout.decode()))
             self._daemon_pid = int(r.group(1))
             return self._test_connection(timeout=0)
         else:
             raise ClusterError(
-                'pg_ctl status exited with status {:d}: {}'.format(
+                'gs_ctl status exited with status {:d}: {}'.format(
                     process.returncode, stderr))
 
     async def connect(self, loop=None, **kwargs):
@@ -149,7 +149,7 @@ class Cluster:
 
         os.makedirs(self._data_dir, exist_ok=True)
         process = subprocess.run(
-            [self._pg_ctl, 'init', '-D', self._data_dir] + extra_args,
+            [self._gs_ctl, 'init', '-D', self._data_dir] + extra_args,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             cwd=self._data_dir,
@@ -159,7 +159,7 @@ class Cluster:
 
         if process.returncode != 0:
             raise ClusterError(
-                'pg_ctl init exited with status {:d}:\n{}'.format(
+                'gs_ctl init exited with status {:d}:\n{}'.format(
                     process.returncode, output.decode()))
 
         return output.decode()
@@ -197,7 +197,7 @@ class Cluster:
             server_settings['ssl_key_file'] = keyfile
 
         if sockdir is not None:
-            if self._pg_version < (9, 3):
+            if self._gaussdb_version < (9, 3):
                 sockdir_opt = 'unix_socket_directory'
             else:
                 sockdir_opt = 'unix_socket_directories'
@@ -208,7 +208,7 @@ class Cluster:
             extra_args.extend(['-c', '{}={}'.format(k, v)])
 
         if _system == 'Windows':
-            # On Windows we have to use pg_ctl as direct execution
+            # On Windows we have to use gs_ctl as direct execution
             # of GaussDB daemon under an Administrative account
             # is not permitted and there is no easy way to drop
             # privileges.
@@ -217,7 +217,7 @@ class Cluster:
                 print(
                     'async_gaussdb.cluster: Running',
                     ' '.join([
-                        self._pg_ctl, 'start', '-D', self._data_dir,
+                        self._gs_ctl, 'start', '-D', self._data_dir,
                         '-o', ' '.join(extra_args)
                     ]),
                     file=sys.stderr,
@@ -226,7 +226,7 @@ class Cluster:
                 stdout = subprocess.DEVNULL
 
             process = subprocess.run(
-                [self._pg_ctl, 'start', '-D', self._data_dir,
+                [self._gs_ctl, 'start', '-D', self._data_dir,
                  '-o', ' '.join(extra_args)],
                 stdout=stdout,
                 stderr=subprocess.STDOUT,
@@ -239,7 +239,7 @@ class Cluster:
                 else:
                     stderr = ''
                 raise ClusterError(
-                    'pg_ctl start exited with status {:d}{}'.format(
+                    'gs_ctl start exited with status {:d}{}'.format(
                         process.returncode, stderr))
         else:
             if os.getenv('async_gaussdb_DEBUG_SERVER'):
@@ -249,7 +249,7 @@ class Cluster:
 
             self._daemon_process = \
                 subprocess.Popen(
-                    [self._postgres, '-D', self._data_dir, *extra_args],
+                    [self._gaussdb, '-D', self._data_dir, *extra_args],
                     stdout=stdout,
                     stderr=subprocess.STDOUT,
                     cwd=self._data_dir,
@@ -266,7 +266,7 @@ class Cluster:
             raise ClusterError('cannot reload: cluster is not running')
 
         process = subprocess.run(
-            [self._pg_ctl, 'reload', '-D', self._data_dir],
+            [self._gs_ctl, 'reload', '-D', self._data_dir],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             cwd=self._data_dir,
@@ -276,12 +276,12 @@ class Cluster:
 
         if process.returncode != 0:
             raise ClusterError(
-                'pg_ctl stop exited with status {:d}: {}'.format(
+                'gs_ctl stop exited with status {:d}: {}'.format(
                     process.returncode, stderr.decode()))
 
     def stop(self, wait=60):
         process = subprocess.run(
-            [self._pg_ctl, 'stop', '-D', self._data_dir, '-t', str(wait),
+            [self._gs_ctl, 'stop', '-D', self._data_dir, '-t', str(wait),
              '-m', 'fast'],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -292,7 +292,7 @@ class Cluster:
 
         if process.returncode != 0:
             raise ClusterError(
-                'pg_ctl stop exited with status {:d}: {}'.format(
+                'gs_ctl stop exited with status {:d}: {}'.format(
                     process.returncode, stderr.decode()))
 
         if (self._daemon_process is not None and
@@ -349,9 +349,9 @@ class Cluster:
         opts.append(self._data_dir)
 
         try:
-            reset_wal = self._find_pg_binary('pg_resetwal')
+            reset_wal = self._find_gaussdb_binary('pg_resetwal')
         except ClusterError:
-            reset_wal = self._find_pg_binary('pg_resetxlog')
+            reset_wal = self._find_gaussdb_binary('pg_resetxlog')
 
         process = subprocess.run(
             [reset_wal] + opts,
@@ -446,18 +446,18 @@ class Cluster:
             self.reload()
 
     def _init_env(self):
-        if not self._pg_bin_dir:
-            pg_config = self._find_pg_config(self._pg_config_path)
-            pg_config_data = self._run_pg_config(pg_config)
+        if not self._gaussdb_bin_dir:
+            pg_config = self._find_gaussdb_config(self._pg_config)
+            pg_config_data = self._run_gaussdb_config(pg_config)
 
-            self._pg_bin_dir = pg_config_data.get('bindir')
-            if not self._pg_bin_dir:
+            self._gaussdb_bin_dir = pg_config_data.get('bindir')
+            if not self._gaussdb_bin_dir:
                 raise ClusterError(
                     'pg_config output did not provide the BINDIR value')
 
-        self._pg_ctl = self._find_pg_binary('pg_ctl')
-        self._postgres = self._find_pg_binary('postgres')
-        self._pg_version = self._get_pg_version()
+        self._gs_ctl = self._find_gaussdb_binary('gs_ctl')
+        self._gaussdb = self._find_gaussdb_binary('gaussdb')
+        self._gaussdb_version = self._get_gaussdb_version()
 
     def _connection_addr_from_pidfile(self):
         pidfile = os.path.join(self._data_dir, 'postmaster.pid')
@@ -471,12 +471,12 @@ class Cluster:
         lines = piddata.splitlines()
 
         if len(lines) < 6:
-            # A complete postgres pidfile is at least 6 lines
+            # A complete gaussdb pidfile is at least 6 lines
             return None
 
         pmpid = int(lines[0])
         if self._daemon_pid and pmpid != self._daemon_pid:
-            # This might be an old pidfile left from previous postgres
+            # This might be an old pidfile left from previous gaussdb
             # daemon run.
             return None
 
@@ -521,7 +521,7 @@ class Cluster:
                 try:
                     con = loop.run_until_complete(
                         async_gaussdb.connect(database='postgres',
-                                              user='postgres',
+                                              user='root',
                                               timeout=5,
                                               loop=loop,
                                               **self._connection_addr))
@@ -543,9 +543,9 @@ class Cluster:
 
         return 'running'
 
-    def _run_pg_config(self, pg_config_path):
+    def _run_gaussdb_config(self, pg_config):
         process = subprocess.run(
-            pg_config_path, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            pg_config, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.stdout, process.stderr
 
         if process.returncode != 0:
@@ -561,36 +561,36 @@ class Cluster:
 
             return config
 
-    def _find_pg_config(self, pg_config_path):
-        if pg_config_path is None:
+    def _find_gaussdb_config(self, pg_config):
+        if pg_config is None:
             pg_install = (
-                os.environ.get('PGINSTALLATION')
-                or os.environ.get('PGBIN')
+                os.environ.get('GAUSSDBINSTALLATION')
+                or os.environ.get('GAUSSDBBIN')
             )
             if pg_install:
-                pg_config_path = platform_exe(
+                pg_config = platform_exe(
                     os.path.join(pg_install, 'pg_config'))
             else:
                 pathenv = os.environ.get('PATH').split(os.pathsep)
                 for path in pathenv:
-                    pg_config_path = platform_exe(
+                    pg_config = platform_exe(
                         os.path.join(path, 'pg_config'))
-                    if os.path.exists(pg_config_path):
+                    if os.path.exists(pg_config):
                         break
                 else:
-                    pg_config_path = None
+                    pg_config = None
 
-        if not pg_config_path:
+        if not pg_config:
             raise ClusterError('could not find pg_config executable')
 
-        if not os.path.isfile(pg_config_path):
+        if not os.path.isfile(pg_config):
             raise ClusterError('{!r} is not an executable'.format(
-                pg_config_path))
+                pg_config))
 
-        return pg_config_path
+        return pg_config
 
-    def _find_pg_binary(self, binary):
-        bpath = platform_exe(os.path.join(self._pg_bin_dir, binary))
+    def _find_gaussdb_binary(self, binary):
+        bpath = platform_exe(os.path.join(self._gaussdb_bin_dir, binary))
 
         if not os.path.isfile(bpath):
             raise ClusterError(
@@ -599,19 +599,19 @@ class Cluster:
 
         return bpath
 
-    def _get_pg_version(self):
+    def _get_gaussdb_version(self):
         process = subprocess.run(
-            [self._postgres, '--version'],
+            [self._gaussdb, '--version'],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.stdout, process.stderr
 
         if process.returncode != 0:
             raise ClusterError(
-                'postgres --version exited with status {:d}: {}'.format(
+                'gaussdb --version exited with status {:d}: {}'.format(
                     process.returncode, stderr))
 
         version_string = stdout.decode('utf-8').strip(' \n')
-        prefix = 'postgres (PostgreSQL) '
+        prefix = 'gaussdb'
         if not version_string.startswith(prefix):
             raise ClusterError(
                 'could not determine server version from {!r}'.format(
@@ -624,29 +624,29 @@ class Cluster:
 class TempCluster(Cluster):
     def __init__(self, *,
                  data_dir_suffix=None, data_dir_prefix=None,
-                 data_dir_parent=None, pg_config_path=None):
+                 data_dir_parent=None, pg_config=None):
         self._data_dir = _mkdtemp(suffix=data_dir_suffix,
                                   prefix=data_dir_prefix,
                                   dir=data_dir_parent)
-        super().__init__(self._data_dir, pg_config_path=pg_config_path)
+        super().__init__(self._data_dir, pg_config=pg_config)
 
 
 class HotStandbyCluster(TempCluster):
     def __init__(self, *,
                  master, replication_user,
                  data_dir_suffix=None, data_dir_prefix=None,
-                 data_dir_parent=None, pg_config_path=None):
+                 data_dir_parent=None, pg_config=None):
         self._master = master
         self._repl_user = replication_user
         super().__init__(
             data_dir_suffix=data_dir_suffix,
             data_dir_prefix=data_dir_prefix,
             data_dir_parent=data_dir_parent,
-            pg_config_path=pg_config_path)
+            pg_config=pg_config)
 
     def _init_env(self):
         super()._init_env()
-        self._pg_basebackup = self._find_pg_binary('pg_basebackup')
+        self._gs_basebackup = self._find_gaussdb_binary('gs_basebackup')
 
     def init(self, **settings):
         """Initialize cluster."""
@@ -656,7 +656,7 @@ class HotStandbyCluster(TempCluster):
                     self._data_dir))
 
         process = subprocess.run(
-            [self._pg_basebackup, '-h', self._master['host'],
+            [self._gs_basebackup, '-h', self._master['host'],
              '-p', self._master['port'], '-D', self._data_dir,
              '-U', self._repl_user],
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -665,10 +665,10 @@ class HotStandbyCluster(TempCluster):
 
         if process.returncode != 0:
             raise ClusterError(
-                'pg_basebackup init exited with status {:d}:\n{}'.format(
+                'gs_basebackup init exited with status {:d}:\n{}'.format(
                     process.returncode, output.decode()))
 
-        if self._pg_version < (12, 0):
+        if self._gaussdb_version < (12, 0):
             with open(os.path.join(self._data_dir, 'recovery.conf'), 'w') as f:
                 f.write(textwrap.dedent("""\
                     standby_mode = 'on'
@@ -684,7 +684,7 @@ class HotStandbyCluster(TempCluster):
         return output.decode()
 
     def start(self, wait=60, *, server_settings={}, **opts):
-        if self._pg_version >= (12, 0):
+        if self._gaussdb_version >= (12, 0):
             server_settings = server_settings.copy()
             server_settings['primary_conninfo'] = (
                 '"host={host} port={port} user={user}"'.format(

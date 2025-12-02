@@ -12,8 +12,8 @@ on:
 jobs:
   test-platforms:
     # NOTE: this matrix is for testing various combinations of Python and OS
-    # versions on the system-installed PostgreSQL version (which is usually
-    # fairly recent). For a PostgreSQL version matrix see the test-postgres
+    # versions on the system-installed GaussDB version (which is usually
+    # fairly recent). For a GaussDB version matrix see the test-gaussdb
     # job.
     strategy:
       matrix:
@@ -100,11 +100,11 @@ jobs:
       if: "!steps.release.outputs.is_release"
       env:
         LOOP_IMPL: ${{ matrix.loop }}
-        PGHOST: "127.0.0.1"
-        PGPORT: 5432
-        PGUSER: "testuser"
-        PGPASSWORD: "Test@123"
-        PGDATABASE: "test"
+        GAUSSDBHOST: "127.0.0.1"
+        GAUSSDBPORT: 5432
+        GAUSSDBUSER: "testuser"
+        GAUSSDBPASSWORD: "Test@123"
+        GAUSSDBDATABASE: "test"
       run: |
         if [ "${LOOP_IMPL}" = "uvloop" ]; then
           env USE_UVLOOP=1 python -m unittest -v tests.suite

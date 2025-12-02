@@ -130,13 +130,13 @@ class TestLogListeners(tb.ConnectedTestCase):
         q2 = asyncio.Queue()
 
         def notice_callb(con, message):
-            # Message fields depend on PG version, hide some values.
+            # Message fields depend on GaussDB version, hide some values.
             dct = message.as_dict()
             del dct['server_source_line']
             q1.put_nowait((con, type(message), dct))
 
         async def async_notice_callb(con, message):
-            # Message fields depend on PG version, hide some values.
+            # Message fields depend on GaussDB version, hide some values.
             dct = message.as_dict()
             del dct['server_source_line']
             q2.put_nowait((con, type(message), dct))
@@ -281,7 +281,7 @@ class TestLogListeners(tb.ConnectedTestCase):
             """.format(level, code))
 
         def notice_callb(con, message):
-            # Message fields depend on PG version, hide some values.
+            # Message fields depend on GaussDB version, hide some values.
             q1.put_nowait(message)
 
         self.con.add_log_listener(notice_callb)
@@ -313,7 +313,7 @@ class TestLogListeners(tb.ConnectedTestCase):
                     con.add_log_listener(listener1)
 
 
-@unittest.skipIf(os.environ.get('PGHOST'), 'using remote cluster for testing')
+@unittest.skipIf(os.environ.get('GAUSSDBHOST'), 'using remote cluster for testing')
 @unittest.skipIf(
     platform.system() == 'Windows',
     'not compatible with ProactorEventLoop which is default in Python 3.8+')

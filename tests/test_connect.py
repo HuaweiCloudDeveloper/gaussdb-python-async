@@ -26,9 +26,9 @@ import weakref
 
 import async_gaussdb
 from async_gaussdb import _testbase as tb
-from async_gaussdb import connection as pg_connection
+from async_gaussdb import connection as gaussdb_connection
 from async_gaussdb import connect_utils
-from async_gaussdb import cluster as pg_cluster
+from async_gaussdb import cluster as gaussdb_cluster
 from async_gaussdb import exceptions
 from async_gaussdb.connect_utils import SSLMode
 from async_gaussdb.serverversion import split_server_version_string
@@ -58,21 +58,21 @@ else:
 def mock_dot_gaussdb(*, ca=True, crl=False, client=False, protected=False):
     with tempfile.TemporaryDirectory() as temp_dir:
         home = pathlib.Path(temp_dir)
-        pg_home = home / '.gaussdb'
-        pg_home.mkdir()
+        gaussdb_home = home / '.gaussdb'
+        gaussdb_home.mkdir()
         if ca:
-            shutil.copyfile(SSL_CA_CERT_FILE, pg_home / 'root.crt')
+            shutil.copyfile(SSL_CA_CERT_FILE, gaussdb_home / 'root.crt')
         if crl:
-            shutil.copyfile(SSL_CA_CRL_FILE, pg_home / 'root.crl')
+            shutil.copyfile(SSL_CA_CRL_FILE, gaussdb_home / 'root.crl')
         if client:
-            shutil.copyfile(CLIENT_SSL_CERT_FILE, pg_home / 'gaussdb.crt')
+            shutil.copyfile(CLIENT_SSL_CERT_FILE, gaussdb_home / 'gaussdb.crt')
             if protected:
                 shutil.copyfile(
-                    CLIENT_SSL_PROTECTED_KEY_FILE, pg_home / 'gaussdb.key'
+                    CLIENT_SSL_PROTECTED_KEY_FILE, gaussdb_home / 'gaussdb.key'
                 )
             else:
                 shutil.copyfile(
-                    CLIENT_SSL_KEY_FILE, pg_home / 'gaussdb.key'
+                    CLIENT_SSL_KEY_FILE, gaussdb_home / 'gaussdb.key'
                 )
         with unittest.mock.patch(
             'pathlib.Path.home', unittest.mock.Mock(return_value=home)
@@ -424,7 +424,7 @@ class TestGssAuthentication(BaseTestAuthentication):
 
     @classmethod
     def setup_cluster(cls):
-        cls.cluster = cls.new_cluster(pg_cluster.TempCluster)
+        cls.cluster = cls.new_cluster(gaussdb_cluster.TempCluster)
         cls.start_cluster(
             cls.cluster, server_settings=cls.get_server_settings())
 
@@ -478,11 +478,11 @@ class TestConnectParams(tb.TestCase):
         {
             'name': 'all_env_default_ssl',
             'env': {
-                'PGUSER': 'user',
-                'PGDATABASE': 'testdb',
-                'PGPASSWORD': 'passw',
-                'PGHOST': 'host',
-                'PGPORT': '123'
+                'GAUSSDBUSER': 'user',
+                'GAUSSDBDATABASE': 'testdb',
+                'GAUSSDBPASSWORD': 'passw',
+                'GAUSSDBHOST': 'host',
+                'GAUSSDBPORT': '123'
             },
             'result': ([('host', 123)], {
                 'user': 'user',
@@ -496,11 +496,11 @@ class TestConnectParams(tb.TestCase):
         {
             'name': 'params_override_env',
             'env': {
-                'PGUSER': 'user',
-                'PGDATABASE': 'testdb',
-                'PGPASSWORD': 'passw',
-                'PGHOST': 'host',
-                'PGPORT': '123'
+                'GAUSSDBUSER': 'user',
+                'GAUSSDBDATABASE': 'testdb',
+                'GAUSSDBPASSWORD': 'passw',
+                'GAUSSDBHOST': 'host',
+                'GAUSSDBPORT': '123'
             },
 
             'host': 'host2',
@@ -519,12 +519,12 @@ class TestConnectParams(tb.TestCase):
         {
             'name': 'params_override_env_and_dsn',
             'env': {
-                'PGUSER': 'user',
-                'PGDATABASE': 'testdb',
-                'PGPASSWORD': 'passw',
-                'PGHOST': 'host',
-                'PGPORT': '123',
-                'PGSSLMODE': 'allow'
+                'GAUSSDBUSER': 'user',
+                'GAUSSDBDATABASE': 'testdb',
+                'GAUSSDBPASSWORD': 'passw',
+                'GAUSSDBHOST': 'host',
+                'GAUSSDBPORT': '123',
+                'GAUSSDBSSLMODE': 'allow'
             },
 
             'dsn': 'gaussdb://user3:123123@localhost/abcdef',
@@ -548,12 +548,12 @@ class TestConnectParams(tb.TestCase):
         {
             'name': 'dsn_overrides_env_partially',
             'env': {
-                'PGUSER': 'user',
-                'PGDATABASE': 'testdb',
-                'PGPASSWORD': 'passw',
-                'PGHOST': 'host',
-                'PGPORT': '123',
-                'PGSSLMODE': 'allow'
+                'GAUSSDBUSER': 'user',
+                'GAUSSDBDATABASE': 'testdb',
+                'GAUSSDBPASSWORD': 'passw',
+                'GAUSSDBHOST': 'host',
+                'GAUSSDBPORT': '123',
+                'GAUSSDBSSLMODE': 'allow'
             },
 
             'dsn': 'gaussdb://user3:123123@localhost:5555/abcdef',
@@ -570,12 +570,12 @@ class TestConnectParams(tb.TestCase):
         {
             'name': 'params_override_env_and_dsn_ssl_prefer',
             'env': {
-                'PGUSER': 'user',
-                'PGDATABASE': 'testdb',
-                'PGPASSWORD': 'passw',
-                'PGHOST': 'host',
-                'PGPORT': '123',
-                'PGSSLMODE': 'prefer'
+                'GAUSSDBUSER': 'user',
+                'GAUSSDBDATABASE': 'testdb',
+                'GAUSSDBPASSWORD': 'passw',
+                'GAUSSDBHOST': 'host',
+                'GAUSSDBPORT': '123',
+                'GAUSSDBSSLMODE': 'prefer'
             },
 
             'dsn': 'gaussdb://user3:123123@localhost/abcdef',
@@ -599,7 +599,7 @@ class TestConnectParams(tb.TestCase):
         {
             'name': 'params_ssl_negotiation_dsn',
             'env': {
-                'PGSSLNEGOTIATION': 'gaussdb'
+                'GAUSSDBSSLNEGOTIATION': 'gaussdb'
             },
 
             'dsn': 'gaussdb://u:p@localhost/d?sslnegotiation=direct',
@@ -616,7 +616,7 @@ class TestConnectParams(tb.TestCase):
         {
             'name': 'params_ssl_negotiation_env',
             'env': {
-                'PGSSLNEGOTIATION': 'direct'
+                'GAUSSDBSSLNEGOTIATION': 'direct'
             },
 
             'dsn': 'gaussdb://u:p@localhost/d',
@@ -633,7 +633,7 @@ class TestConnectParams(tb.TestCase):
         {
             'name': 'params_ssl_negotiation_params',
             'env': {
-                'PGSSLNEGOTIATION': 'direct'
+                'GAUSSDBSSLNEGOTIATION': 'direct'
             },
 
             'dsn': 'gaussdb://u:p@localhost/d',
@@ -651,12 +651,12 @@ class TestConnectParams(tb.TestCase):
         {
             'name': 'dsn_overrides_env_partially_ssl_prefer',
             'env': {
-                'PGUSER': 'user',
-                'PGDATABASE': 'testdb',
-                'PGPASSWORD': 'passw',
-                'PGHOST': 'host',
-                'PGPORT': '123',
-                'PGSSLMODE': 'prefer'
+                'GAUSSDBUSER': 'user',
+                'GAUSSDBDATABASE': 'testdb',
+                'GAUSSDBPASSWORD': 'passw',
+                'GAUSSDBHOST': 'host',
+                'GAUSSDBPORT': '123',
+                'GAUSSDBSSLMODE': 'prefer'
             },
 
             'dsn': 'gaussdb://user3:123123@localhost:5555/abcdef',
@@ -727,7 +727,7 @@ class TestConnectParams(tb.TestCase):
             'name': 'target_session_attrs_3',
             'dsn': 'gaussdb://user@host1:1111,host2:2222/db',
             'env': {
-                'PGTARGETSESSIONATTRS': 'read-only',
+                'GAUSSDBTARGETSESSIONATTRS': 'read-only',
             },
             'result': ([('host1', 1111), ('host2', 2222)], {
                 'database': 'db',
@@ -740,7 +740,7 @@ class TestConnectParams(tb.TestCase):
             'name': 'krbsrvname',
             'dsn': 'gaussdb://user@host/db?krbsrvname=srv_qs',
             'env': {
-                'PGKRBSRVNAME': 'srv_env',
+                'GAUSSDBKRBSRVNAME': 'srv_env',
             },
             'result': ([('host', 5432)], {
                 'database': 'db',
@@ -755,7 +755,7 @@ class TestConnectParams(tb.TestCase):
             'dsn': 'gaussdb://user@host/db?krbsrvname=srv_qs',
             'krbsrvname': 'srv_kws',
             'env': {
-                'PGKRBSRVNAME': 'srv_env',
+                'GAUSSDBKRBSRVNAME': 'srv_env',
             },
             'result': ([('host', 5432)], {
                 'database': 'db',
@@ -769,7 +769,7 @@ class TestConnectParams(tb.TestCase):
             'name': 'krbsrvname_3',
             'dsn': 'gaussdb://user@host/db',
             'env': {
-                'PGKRBSRVNAME': 'srv_env',
+                'GAUSSDBKRBSRVNAME': 'srv_env',
             },
             'result': ([('host', 5432)], {
                 'database': 'db',
@@ -783,7 +783,7 @@ class TestConnectParams(tb.TestCase):
             'name': 'gsslib',
             'dsn': f'gaussdb://user@host/db?gsslib={OTHER_GSSLIB}',
             'env': {
-                'PGGSSLIB': 'ignored',
+                'GAUSSDBGSSLIB': 'ignored',
             },
             'result': ([('host', 5432)], {
                 'database': 'db',
@@ -798,7 +798,7 @@ class TestConnectParams(tb.TestCase):
             'dsn': 'gaussdb://user@host/db?gsslib=ignored',
             'gsslib': OTHER_GSSLIB,
             'env': {
-                'PGGSSLIB': 'ignored',
+                'GAUSSDBGSSLIB': 'ignored',
             },
             'result': ([('host', 5432)], {
                 'database': 'db',
@@ -812,7 +812,7 @@ class TestConnectParams(tb.TestCase):
             'name': 'gsslib_3',
             'dsn': 'gaussdb://user@host/db',
             'env': {
-                'PGGSSLIB': OTHER_GSSLIB,
+                'GAUSSDBGSSLIB': OTHER_GSSLIB,
             },
             'result': ([('host', 5432)], {
                 'database': 'db',
@@ -877,8 +877,8 @@ class TestConnectParams(tb.TestCase):
         {
             'name': 'dsn_combines_env_multi_host',
             'env': {
-                'PGHOST': 'host1:1111,host2:2222',
-                'PGUSER': 'foo',
+                'GAUSSDBHOST': 'host1:1111,host2:2222',
+                'GAUSSDBUSER': 'foo',
             },
             'dsn': 'gaussdb:///db',
             'result': ([('host1', 1111), ('host2', 2222)], {
@@ -891,7 +891,7 @@ class TestConnectParams(tb.TestCase):
         {
             'name': 'dsn_multi_host_combines_env',
             'env': {
-                'PGUSER': 'foo',
+                'GAUSSDBUSER': 'foo',
             },
             'dsn': 'gaussdb:///db?host=host1:1111,host2:2222',
             'result': ([('host1', 1111), ('host2', 2222)], {
@@ -904,7 +904,7 @@ class TestConnectParams(tb.TestCase):
         {
             'name': 'params_multi_host_dsn_env_mix',
             'env': {
-                'PGUSER': 'foo',
+                'GAUSSDBUSER': 'foo',
             },
             'dsn': 'gaussdb:///db',
             'host': ['host1', 'host2'],
@@ -917,7 +917,7 @@ class TestConnectParams(tb.TestCase):
         {
             'name': 'params_multi_host_dsn_env_mix_tuple',
             'env': {
-                'PGUSER': 'foo',
+                'GAUSSDBUSER': 'foo',
             },
             'dsn': 'gaussdb:///db',
             'host': ('host1', 'host2'),
@@ -1087,13 +1087,13 @@ class TestConnectParams(tb.TestCase):
         {
             'name': 'multi_host_single_port',
             'dsn': 'gaussdb:///postgres?host=127.0.0.1,127.0.0.2&port=5432'
-                   '&user=postgres',
+                   '&user=root',
             'result': (
                 [
                     ('127.0.0.1', 5432),
                     ('127.0.0.2', 5432)
                 ], {
-                    'user': 'postgres',
+                    'user': 'root',
                     'database': 'postgres',
                     'target_session_attrs': 'any',
                 }
@@ -1126,9 +1126,9 @@ class TestConnectParams(tb.TestCase):
 
     def run_testcase(self, testcase):
         env = testcase.get('env', {})
-        test_env = {'PGHOST': None, 'PGPORT': None,
-                    'PGUSER': None, 'PGPASSWORD': None,
-                    'PGDATABASE': None, 'PGSSLMODE': None}
+        test_env = {'GAUSSDBHOST': None, 'GAUSSDBPORT': None,
+                    'GAUSSDBUSER': None, 'GAUSSDBPASSWORD': None,
+                    'GAUSSDBDATABASE': None, 'GAUSSDBSSLMODE': None}
         test_env.update(env)
 
         dsn = testcase.get('dsn')
@@ -1229,10 +1229,10 @@ class TestConnectParams(tb.TestCase):
                     del os.environ[key]
 
     def test_test_connect_params_run_testcase(self):
-        with self.environ(PGPORT='777'):
+        with self.environ(GAUSSDBPORT='777'):
             self.run_testcase({
                 'env': {
-                    'PGUSER': '__test__'
+                    'GAUSSDBUSER': '__test__'
                 },
                 'host': 'abc',
                 'result': (
@@ -1247,17 +1247,17 @@ class TestConnectParams(tb.TestCase):
         for testcase in self.TESTS:
             self.run_testcase(testcase)
 
-    def test_connect_pgpass_regular(self):
+    def test_connect_gaussdbpass_regular(self):
         passfile = tempfile.NamedTemporaryFile('w+t', delete=False)
         passfile.write(textwrap.dedent(R'''
-            abc:*:*:user:password from pgpass for user@abc
-            localhost:*:*:*:password from pgpass for localhost
-            cde:5433:*:*:password from pgpass for cde:5433
+            abc:*:*:user:password from gaussdbpass for user@abc
+            localhost:*:*:*:password from gaussdbpass for localhost
+            cde:5433:*:*:password from gaussdbpass for cde:5433
 
-            *:*:*:testuser:password from pgpass for testuser
-            *:*:testdb:*:password from pgpass for testdb
+            *:*:*:testuser:password from gaussdbpass for testuser
+            *:*:testdb:*:password from gaussdbpass for testdb
             # comment
-            *:*:test\:db:test\\:password from pgpass with escapes
+            *:*:test\:db:test\\:password from gaussdbpass with escapes
         '''))
         passfile.close()
         os.chmod(passfile.name, stat.S_IWUSR | stat.S_IRUSR)
@@ -1266,7 +1266,7 @@ class TestConnectParams(tb.TestCase):
             # passfile path in env
             self.run_testcase({
                 'env': {
-                    'PGPASSFILE': passfile.name
+                    'GAUSSDBPASSFILE': passfile.name
                 },
                 'host': 'abc',
                 'user': 'user',
@@ -1274,7 +1274,7 @@ class TestConnectParams(tb.TestCase):
                 'result': (
                     [('abc', 5432)],
                     {
-                        'password': 'password from pgpass for user@abc',
+                        'password': 'password from gaussdbpass for user@abc',
                         'user': 'user',
                         'database': 'db',
                         'target_session_attrs': 'any',
@@ -1291,7 +1291,7 @@ class TestConnectParams(tb.TestCase):
                 'result': (
                     [('abc', 5432)],
                     {
-                        'password': 'password from pgpass for user@abc',
+                        'password': 'password from gaussdbpass for user@abc',
                         'user': 'user',
                         'database': 'db',
                         'target_session_attrs': 'any',
@@ -1306,7 +1306,7 @@ class TestConnectParams(tb.TestCase):
                 'result': (
                     [('abc', 5432)],
                     {
-                        'password': 'password from pgpass for user@abc',
+                        'password': 'password from gaussdbpass for user@abc',
                         'user': 'user',
                         'database': 'db',
                         'target_session_attrs': 'any',
@@ -1322,7 +1322,7 @@ class TestConnectParams(tb.TestCase):
                 'result': (
                     [('localhost', 5432)],
                     {
-                        'password': 'password from pgpass for localhost',
+                        'password': 'password from gaussdbpass for localhost',
                         'user': 'user',
                         'database': 'db',
                         'target_session_attrs': 'any',
@@ -1340,7 +1340,7 @@ class TestConnectParams(tb.TestCase):
                     'result': (
                         ['/tmp/.s.PGSQL.5432'],
                         {
-                            'password': 'password from pgpass for localhost',
+                            'password': 'password from gaussdbpass for localhost',
                             'user': 'user',
                             'database': 'db',
                             'target_session_attrs': 'any',
@@ -1358,7 +1358,7 @@ class TestConnectParams(tb.TestCase):
                 'result': (
                     [('cde', 5433)],
                     {
-                        'password': 'password from pgpass for cde:5433',
+                        'password': 'password from gaussdbpass for cde:5433',
                         'user': 'user',
                         'database': 'db',
                         'target_session_attrs': 'any',
@@ -1375,7 +1375,7 @@ class TestConnectParams(tb.TestCase):
                 'result': (
                     [('def', 5432)],
                     {
-                        'password': 'password from pgpass for testuser',
+                        'password': 'password from gaussdbpass for testuser',
                         'user': 'testuser',
                         'database': 'db',
                         'target_session_attrs': 'any',
@@ -1392,7 +1392,7 @@ class TestConnectParams(tb.TestCase):
                 'result': (
                     [('efg', 5432)],
                     {
-                        'password': 'password from pgpass for testdb',
+                        'password': 'password from gaussdbpass for testdb',
                         'user': 'user',
                         'database': 'testdb',
                         'target_session_attrs': 'any',
@@ -1409,7 +1409,7 @@ class TestConnectParams(tb.TestCase):
                 'result': (
                     [('fgh', 5432)],
                     {
-                        'password': 'password from pgpass with escapes',
+                        'password': 'password from gaussdbpass with escapes',
                         'user': R'test\\',
                         'database': R'test\:db',
                         'target_session_attrs': 'any',
@@ -1421,8 +1421,8 @@ class TestConnectParams(tb.TestCase):
             os.unlink(passfile.name)
 
     @unittest.skipIf(_system == 'Windows', 'no mode checking on Windows')
-    def test_connect_pgpass_badness_mode(self):
-        # Verify that .pgpass permissions are checked
+    def test_connect_gaussdbpass_badness_mode(self):
+        # Verify that .gaussdbpass permissions are checked
         with tempfile.NamedTemporaryFile('w+t') as passfile:
             os.chmod(passfile.name,
                      stat.S_IWUSR | stat.S_IRUSR | stat.S_IWGRP | stat.S_IRGRP)
@@ -1445,8 +1445,8 @@ class TestConnectParams(tb.TestCase):
                     )
                 })
 
-    def test_connect_pgpass_badness_non_file(self):
-        # Verify warnings when .pgpass is not a file
+    def test_connect_gaussdbpass_badness_non_file(self):
+        # Verify warnings when .gaussdbpass is not a file
         with tempfile.TemporaryDirectory() as passfile:
             with self.assertWarnsRegex(
                     UserWarning,
@@ -1466,7 +1466,7 @@ class TestConnectParams(tb.TestCase):
                     )
                 })
 
-    def test_connect_pgpass_nonexistent(self):
+    def test_connect_gaussdbpass_nonexistent(self):
         # nonexistent passfile is OK
         self.run_testcase({
             'host': 'abc',
@@ -1484,7 +1484,7 @@ class TestConnectParams(tb.TestCase):
         })
 
     @unittest.skipIf(_system == 'Windows', 'no mode checking on Windows')
-    def test_connect_pgpass_inaccessible_file(self):
+    def test_connect_gaussdbpass_inaccessible_file(self):
         with tempfile.NamedTemporaryFile('w+t') as passfile:
             os.chmod(passfile.name, stat.S_IWUSR)
 
@@ -1505,7 +1505,7 @@ class TestConnectParams(tb.TestCase):
             })
 
     @unittest.skipIf(_system == 'Windows', 'no mode checking on Windows')
-    def test_connect_pgpass_inaccessible_directory(self):
+    def test_connect_gaussdbpass_inaccessible_directory(self):
         with tempfile.TemporaryDirectory() as passdir:
             with tempfile.NamedTemporaryFile('w+t', dir=passdir) as passfile:
                 os.chmod(passdir, stat.S_IWUSR)
@@ -1545,7 +1545,7 @@ class TestConnectParams(tb.TestCase):
 class TestConnection(tb.ConnectedTestCase):
 
     async def test_connection_isinstance(self):
-        self.assertTrue(isinstance(self.con, pg_connection.Connection))
+        self.assertTrue(isinstance(self.con, gaussdb_connection.Connection))
         self.assertTrue(isinstance(self.con, object))
         self.assertFalse(isinstance(self.con, list))
 
@@ -1580,7 +1580,7 @@ class TestConnection(tb.ConnectedTestCase):
         with check():
             await self.con.reset()
 
-    @unittest.skipIf(os.environ.get('PGHOST'), 'unmanaged cluster')
+    @unittest.skipIf(os.environ.get('GAUSSDBHOST'), 'unmanaged cluster')
     async def test_connection_ssl_to_no_ssl_server(self):
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         ssl_context.load_verify_locations(SSL_CA_CERT_FILE)
@@ -1591,7 +1591,7 @@ class TestConnection(tb.ConnectedTestCase):
                 user='ssl_user',
                 ssl=ssl_context)
 
-    @unittest.skipIf(os.environ.get('PGHOST'), 'unmanaged cluster')
+    @unittest.skipIf(os.environ.get('GAUSSDBHOST'), 'unmanaged cluster')
     async def test_connection_sslmode_no_ssl_server(self):
         async def verify_works(sslmode):
             con = None
@@ -1638,12 +1638,12 @@ class TestConnection(tb.ConnectedTestCase):
             user=conn_spec.get('user'))
         await con.close()
 
-    @unittest.skipIf(os.environ.get('PGHOST'), 'unmanaged cluster')
+    @unittest.skipIf(os.environ.get('GAUSSDBHOST'), 'unmanaged cluster')
     async def test_connection_no_home_dir(self):
         with mock_no_home_dir():
             con = await self.connect(
-                dsn='postgresql://foo/',
-                user='postgres',
+                dsn='gaussdb://foo/',
+                user='root',
                 database='postgres',
                 host='localhost')
             await con.fetchval('SELECT 42')
@@ -1651,8 +1651,8 @@ class TestConnection(tb.ConnectedTestCase):
 
         with mock_dev_null_home_dir():
             con = await self.connect(
-                dsn='postgresql://foo/',
-                user='postgres',
+                dsn='gaussdb://foo/',
+                user='root',
                 database='postgres',
                 host='localhost')
             await con.fetchval('SELECT 42')
@@ -1689,7 +1689,7 @@ class BaseTestSSLConnection(tb.ConnectedTestCase):
             'ssl_key_file': SSL_KEY_FILE,
             'ssl_ca_file': CLIENT_CA_CERT_FILE,
         })
-        if cls.cluster.get_pg_version() >= (12, 0):
+        if cls.cluster.get_gaussdb_version() >= (12, 0):
             conf['ssl_min_protocol_version'] = 'TLSv1.2'
             conf['ssl_max_protocol_version'] = 'TLSv1.2'
 
@@ -1697,7 +1697,7 @@ class BaseTestSSLConnection(tb.ConnectedTestCase):
 
     @classmethod
     def setup_cluster(cls):
-        cls.cluster = cls.new_cluster(pg_cluster.TempCluster)
+        cls.cluster = cls.new_cluster(gaussdb_cluster.TempCluster)
         cls.start_cluster(
             cls.cluster, server_settings=cls.get_server_settings())
 
@@ -1734,7 +1734,7 @@ class BaseTestSSLConnection(tb.ConnectedTestCase):
         raise NotImplementedError()
 
 
-@unittest.skipIf(os.environ.get('PGHOST'), 'unmanaged cluster')
+@unittest.skipIf(os.environ.get('GAUSSDBHOST'), 'unmanaged cluster')
 class TestSSLConnection(BaseTestSSLConnection):
     def _add_hba_entry(self):
         self.cluster.add_hba_entry(
@@ -1889,7 +1889,7 @@ class TestSSLConnection(BaseTestSSLConnection):
                 await con.close()
 
     async def test_tls_version(self):
-        if self.cluster.get_pg_version() < (12, 0):
+        if self.cluster.get_gaussdb_version() < (12, 0):
             self.skipTest("GaussDBSQL < 12 cannot set ssl protocol version")
 
         # XXX: uvloop artifact
@@ -1940,7 +1940,7 @@ class TestSSLConnection(BaseTestSSLConnection):
                 self.loop.set_exception_handler(old_handler)
 
 
-@unittest.skipIf(os.environ.get('PGHOST'), 'unmanaged cluster')
+@unittest.skipIf(os.environ.get('GAUSSDBHOST'), 'unmanaged cluster')
 class TestClientSSLConnection(BaseTestSSLConnection):
     def _add_hba_entry(self):
         self.cluster.add_hba_entry(
@@ -2013,19 +2013,19 @@ class TestClientSSLConnection(BaseTestSSLConnection):
 
     async def test_ssl_connection_client_auth_env(self):
         env = {
-            'PGSSLROOTCERT': SSL_CA_CERT_FILE,
-            'PGSSLCERT': CLIENT_SSL_CERT_FILE,
-            'PGSSLKEY': CLIENT_SSL_KEY_FILE,
+            'GAUSSDBSSLROOTCERT': SSL_CA_CERT_FILE,
+            'GAUSSDBSSLCERT': CLIENT_SSL_CERT_FILE,
+            'GAUSSDBSSLKEY': CLIENT_SSL_KEY_FILE,
         }
         dsn = 'gaussdb://ssl_user@localhost/postgres?sslmode=verify-full'
         with unittest.mock.patch.dict('os.environ', env):
             await self._test_works(dsn=dsn)
 
-        env['PGSSLKEY'] = CLIENT_SSL_PROTECTED_KEY_FILE
+        env['GAUSSDBSSLKEY'] = CLIENT_SSL_PROTECTED_KEY_FILE
         with unittest.mock.patch.dict('os.environ', env):
             await self._test_works(dsn=dsn + '&sslpassword=secRet')
 
-    async def test_ssl_connection_client_auth_dot_postgresql(self):
+    async def test_ssl_connection_client_auth_dot_gaussdb(self):
         dsn = 'gaussdb://ssl_user@localhost/postgres?sslmode=verify-full'
         with mock_dot_gaussdb(client=True):
             await self._test_works(dsn=dsn)
@@ -2033,7 +2033,7 @@ class TestClientSSLConnection(BaseTestSSLConnection):
             await self._test_works(dsn=dsn + '&sslpassword=secRet')
 
 
-@unittest.skipIf(os.environ.get('PGHOST'), 'unmanaged cluster')
+@unittest.skipIf(os.environ.get('GAUSSDBHOST'), 'unmanaged cluster')
 class TestNoSSLConnection(BaseTestSSLConnection):
     def _add_hba_entry(self):
         self.cluster.add_hba_entry(
@@ -2201,7 +2201,7 @@ class TestConnectionAttributes(tb.HotStandbyTestCase):
             await self._run_connection_test(
                 connect, target_attr, expected_port
             )
-        if self.master_cluster.get_pg_version()[0] < 14:
+        if self.master_cluster.get_gaussdb_version()[0] < 14:
             self.skipTest("gaussdb<14 does not support these features")
         tests = [
             (self.connect_primary, 'read-write', master_port),
@@ -2223,7 +2223,7 @@ class TestConnectionAttributes(tb.HotStandbyTestCase):
             with self.assertRaises(exceptions.TargetServerAttributeNotMatched):
                 await connect(target_session_attrs=target_attr)
 
-        if self.master_cluster.get_pg_version()[0] < 14:
+        if self.master_cluster.get_gaussdb_version()[0] < 14:
             self.skipTest("gaussdb<14 does not support these features")
         tests = [
             (self.connect_standby, 'read-write'),

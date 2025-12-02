@@ -483,7 +483,7 @@ class Connection(metaclass=ConnectionMeta):
             # Mark this anonymous prepared statement as "unprepared",
             # causing it to get re-Parsed in next bind_execute.
             # We always do this when stmt_cache_size is set to 0 assuming
-            # people are running PgBouncer which is mishandling implicit
+            # people are running Bouncer which is mishandling implicit
             # transactions.
             statement.mark_unprepared()
 
@@ -837,7 +837,7 @@ class Connection(metaclass=ConnectionMeta):
             >>> import async_gaussdb
             >>> import asyncio
             >>> async def run():
-            ...     con = await async_gaussdb.connect(user='postgres')
+            ...     con = await async_gaussdb.connect(user='root')
             ...     result = await con.copy_from_table(
             ...         'mytable', columns=('foo', 'bar'),
             ...         output='file.csv', format='csv')
@@ -904,7 +904,7 @@ class Connection(metaclass=ConnectionMeta):
             >>> import async_gaussdb
             >>> import asyncio
             >>> async def run():
-            ...     con = await async_gaussdb.connect(user='postgres')
+            ...     con = await async_gaussdb.connect(user='root')
             ...     result = await con.copy_from_query(
             ...         'SELECT foo, bar FROM mytable WHERE foo > $1', 10,
             ...         output='file.csv', format='csv')
@@ -980,7 +980,7 @@ class Connection(metaclass=ConnectionMeta):
             >>> import async_gaussdb
             >>> import asyncio
             >>> async def run():
-            ...     con = await async_gaussdb.connect(user='postgres')
+            ...     con = await async_gaussdb.connect(user='root')
             ...     result = await con.copy_to_table(
             ...         'mytable', source='datafile.tbl')
             ...     print(result)
@@ -1058,7 +1058,7 @@ class Connection(metaclass=ConnectionMeta):
             >>> import async_gaussdb
             >>> import asyncio
             >>> async def run():
-            ...     con = await async_gaussdb.connect(user='postgres')
+            ...     con = await async_gaussdb.connect(user='root')
             ...     result = await con.copy_records_to_table(
             ...         'mytable', records=[
             ...             (1, 'foo', 'bar'),
@@ -1075,7 +1075,7 @@ class Connection(metaclass=ConnectionMeta):
             >>> import async_gaussdb
             >>> import asyncio
             >>> async def run():
-            ...     con = await async_gaussdb.connect(user='postgres')
+            ...     con = await async_gaussdb.connect(user='root')
             ...     async def record_gen(size):
             ...         for i in range(size):
             ...             yield (i,)
@@ -1323,7 +1323,7 @@ class Connection(metaclass=ConnectionMeta):
             >>> import datetime
             >>> from dateutil.relativedelta import relativedelta
             >>> async def run():
-            ...     con = await async_gaussdb.connect(user='postgres')
+            ...     con = await async_gaussdb.connect(user='root')
             ...     def encoder(delta):
             ...         ndelta = delta.normalized()
             ...         return (ndelta.years * 12 + ndelta.months,
@@ -1837,7 +1837,7 @@ class Connection(metaclass=ConnectionMeta):
             ...     # Initial schema:
             ...     # CREATE TYPE custom AS (x int, y int);
             ...     # CREATE TABLE tbl(id int, info custom);
-            ...     con = await async_gaussdb.connect(user='postgres')
+            ...     con = await async_gaussdb.connect(user='root')
             ...     async with con.transaction():
             ...         # Prevent concurrent changes in the table
             ...         await con.execute('LOCK TABLE tbl')
@@ -2135,9 +2135,9 @@ async def connect(dsn=None, *,
         If not specified, async_gaussdb will try the following, in order:
 
         - host address(es) parsed from the *dsn* argument,
-        - the value of the ``PGHOST`` environment variable,
+        - the value of the ``GAUSSDBHOST`` environment variable,
         - on Unix, common directories used for GaussDBSQL Unix-domain
-          sockets: ``"/run/postgresql"``, ``"/var/run/postgresl"``,
+          sockets: ``"/run/gaussdb"``, ``"/var/run/gaussdb"``,
           ``"/var/pgsql_socket"``, ``"/private/tmp"``, and ``"/tmp"``,
         - ``"localhost"``.
 
@@ -2150,27 +2150,27 @@ async def connect(dsn=None, *,
         addresses.
 
         If not specified, the value parsed from the *dsn* argument is used,
-        or the value of the ``PGPORT`` environment variable, or ``5432`` if
+        or the value of the ``GAUSSDBPORT`` environment variable, or ``5432`` if
         neither is specified.
 
     :param user:
         The name of the database role used for authentication.
 
         If not specified, the value parsed from the *dsn* argument is used,
-        or the value of the ``PGUSER`` environment variable, or the
+        or the value of the ``GAUSSDBUSER`` environment variable, or the
         operating system name of the user running the application.
 
     :param database:
         The name of the database to connect to.
 
         If not specified, the value parsed from the *dsn* argument is used,
-        or the value of the ``PGDATABASE`` environment variable, or the
+        or the value of the ``GAUSSDBDATABASE`` environment variable, or the
         computed value of the *user* argument.
 
     :param password:
         Password to be used for authentication, if the server requires
         one.  If not specified, the value parsed from the *dsn* argument
-        is used, or the value of the ``PGPASSWORD`` environment variable.
+        is used, or the value of the ``GAUSSDBPASSWORD`` environment variable.
         Note that the use of the environment variable is discouraged as
         other users and applications may be able to read it without needing
         specific privileges.  It is recommended to use *passfile* instead.
@@ -2181,7 +2181,7 @@ async def connect(dsn=None, *,
 
     :param passfile:
         The name of the file used to store passwords
-        (defaults to ``~/.pgpass``, or ``%APPDATA%\postgresql\pgpass.conf``
+        (defaults to ``~/.gaussdbpass``, or ``%APPDATA%\gaussdb\gaussdbpass.conf``
         on Windows).
 
     :param loop:
@@ -2261,7 +2261,7 @@ async def connect(dsn=None, *,
             ...         "path/to/client.cert",
             ...         keyfile="path/to/client.key",
             ...     )
-            ...     con = await async_gaussdb.connect(user='postgres', ssl=sslctx)
+            ...     con = await async_gaussdb.connect(user='root', ssl=sslctx)
             ...     await con.close()
             >>> asyncio.run(main())
 
@@ -2278,7 +2278,7 @@ async def connect(dsn=None, *,
             ...         ssl.Purpose.SERVER_AUTH)
             ...     sslctx.check_hostname = False
             ...     sslctx.verify_mode = ssl.CERT_NONE
-            ...     con = await async_gaussdb.connect(user='postgres', ssl=sslctx)
+            ...     con = await async_gaussdb.connect(user='root', ssl=sslctx)
             ...     await con.close()
             >>> asyncio.run(main())
 
@@ -2314,7 +2314,7 @@ async def connect(dsn=None, *,
           return any of them.
 
         If not specified, the value parsed from the *dsn* argument is used,
-        or the value of the ``PGTARGETSESSIONATTRS`` environment variable,
+        or the value of the ``GAUSSDBTARGETSESSIONATTRS`` environment variable,
         or ``"any"`` if neither is specified.
 
     :param str krbsrvname:
@@ -2334,7 +2334,7 @@ async def connect(dsn=None, *,
         >>> import async_gaussdb
         >>> import asyncio
         >>> async def run():
-        ...     con = await async_gaussdb.connect(user='postgres')
+        ...     con = await async_gaussdb.connect(user='root')
         ...     types = await con.fetch('SELECT * FROM pg_type')
         ...     print(types)
         ...
@@ -2385,7 +2385,7 @@ async def connect(dsn=None, *,
     .. versionchanged:: 0.25.0
        The ``sslcert``, ``sslkey``, ``sslrootcert``, and ``sslcrl`` options
        in the *dsn* argument now have consistent default values of files under
-       ``~/.postgresql/`` as libpq.
+       ``~/.gaussdb/`` as libpq.
 
     .. versionchanged:: 0.26.0
        Added the *direct_tls* parameter.
@@ -2674,7 +2674,10 @@ def _detect_server_capabilities(server_version, connection_settings):
         sql_close_all = False
         jit = False
         sql_copy_from_where = False
-    elif hasattr(connection_settings, 'sql_mode') or hasattr(connection_settings, 'session_respool'):
+    elif (
+        hasattr(connection_settings, 'sql_mode')
+        or hasattr(connection_settings, 'session_respool')
+    ):
         #  Standard GaussDBSQL serve
         advisory_locks = True
         notifications = False
@@ -2684,7 +2687,7 @@ def _detect_server_capabilities(server_version, connection_settings):
         jit = False
         sql_copy_from_where = False
     else:
-        # Standard Postgresql server assumed.
+        # Standard server assumed.
         advisory_locks = True
         notifications = True
         plpgsql = True

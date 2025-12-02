@@ -15,10 +15,10 @@ from async_gaussdb import _testbase as tb
 
 
 class TestEnvironment(tb.ConnectedTestCase):
-    @unittest.skipIf(not os.environ.get('PGVERSION'),
-                     "environ[PGVERSION] is not set")
+    @unittest.skipIf(not os.environ.get('GAUSSDBVERSION'),
+                     "environ[GAUSSDBVERSION] is not set")
     async def test_environment_server_version(self):
-        pgver = os.environ.get('PGVERSION')
+        pgver = os.environ.get('GAUSSDBVERSION')
         env_ver = async_gaussdb.serverversion.split_server_version_string(pgver)
         srv_ver = self.con.get_server_version()
 
@@ -28,12 +28,12 @@ class TestEnvironment(tb.ConnectedTestCase):
                 pgver=pgver, maj=srv_ver.major, min=srv_ver.minor)
         )
 
-    @unittest.skipIf(not os.environ.get('async_gaussdb_VERSION'),
-                     "environ[async_gaussdb_VERSION] is not set")
+    @unittest.skipIf(not os.environ.get('ASYNC_GAUSSDB_VERSION'),
+                     "environ[ASYNC_GAUSSDB_VERSION] is not set")
     @unittest.skipIf("dev" in async_gaussdb.__version__,
                      "development version with git commit data")
-    async def test_environment_async_gaussdb_version(self):
-        apgver = os.environ.get('async_gaussdb_VERSION')
+    async def test_environment_ASYNC_GAUSSDB_VERSION(self):
+        apgver = os.environ.get('ASYNC_GAUSSDB_VERSION')
         self.assertEqual(
             async_gaussdb.__version__, apgver,
             'Expecting async_gaussdb version {}, got {}.'.format(

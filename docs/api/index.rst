@@ -5,7 +5,7 @@ API Reference
 =============
 
 .. module:: async_gaussdb
-    :synopsis: A fast PostgreSQL Database Client Library for Python/asyncio
+    :synopsis: A fast GaussDB Database Client Library for Python/asyncio
 
 .. currentmodule:: async_gaussdb
 
@@ -27,7 +27,7 @@ Connection
 Prepared Statements
 ===================
 
-Prepared statements are a PostgreSQL feature that can be used to optimize the
+Prepared statements are a GaussDB feature that can be used to optimize the
 performance of queries that are executed more than once.  When a query
 is *prepared* by a call to :meth:`Connection.prepare`, the server parses,
 analyzes and compiles the query allowing to reuse that work once there is
@@ -51,12 +51,6 @@ a need to run the same query again.
    async_gaussdb automatically maintains a small LRU cache for queries executed
    during calls to the :meth:`~Connection.fetch`, :meth:`~Connection.fetchrow`,
    or :meth:`~Connection.fetchval` methods.
-
-.. warning::
-
-   If you are using pgbouncer with ``pool_mode`` set to ``transaction`` or
-   ``statement``, prepared statements will not work correctly.  See
-   :ref:`async_gaussdb-prepared-stmt-errors` for more information.
 
 
 .. autoclass:: async_gaussdb.prepared_stmt.PreparedStatement()
@@ -116,9 +110,6 @@ Alternatively, transactions can be used without an ``async with`` block:
 See also the
 :meth:`Connection.transaction() <async_gaussdb.connection.Connection.transaction>`
 function.
-
-.. _savepoint: https://www.postgresql.org/docs/current/static/sql-savepoint.html
-
 
 .. autoclass:: async_gaussdb.transaction.Transaction()
    :members:
@@ -282,7 +273,7 @@ items either by a numeric index or by a field name:
 
 .. class:: Record()
 
-   A read-only representation of PostgreSQL row.
+   A read-only representation of GaussDB row.
 
    .. describe:: len(r)
 

@@ -17,9 +17,9 @@ import unittest
 
 import async_gaussdb
 from async_gaussdb import _testbase as tb
-from async_gaussdb import connection as pg_connection
-from async_gaussdb import pool as pg_pool
-from async_gaussdb import cluster as pg_cluster
+from async_gaussdb import connection as gaussdb_connection
+from async_gaussdb import pool as gaussdb_pool
+from async_gaussdb import cluster as gaussdb_cluster
 
 _system = platform.uname().system
 
@@ -27,14 +27,14 @@ _system = platform.uname().system
 POOL_NOMINAL_TIMEOUT = 0.5
 
 
-class SlowResetConnection(pg_connection.Connection):
+class SlowResetConnection(gaussdb_connection.Connection):
     """Connection class to simulate races with Connection.reset()."""
     async def reset(self, *, timeout=None):
         await asyncio.sleep(0.2)
         return await super().reset(timeout=timeout)
 
 
-class SlowCancelConnection(pg_connection.Connection):
+class SlowCancelConnection(gaussdb_connection.Connection):
     """Connection class to simulate races with Connection._cancel()."""
     async def _cancel(self, waiter):
         await asyncio.sleep(0.2)
@@ -144,7 +144,7 @@ class TestPool(tb.ConnectedTestCase):
         async def connect(*args, **kwargs):
             nonlocal connect_called
             connect_called += 1
-            return await pg_connection.connect(*args, **kwargs)
+            return await gaussdb_connection.connect(*args, **kwargs)
 
         async def setup(con):
             nonlocal setup_called
@@ -292,7 +292,7 @@ class TestPool(tb.ConnectedTestCase):
                                       min_size=1, max_size=1)
 
         async with pool.acquire() as con:
-            self.assertTrue(isinstance(con, pg_connection.Connection))
+            self.assertTrue(isinstance(con, gaussdb_connection.Connection))
             self.assertFalse(isinstance(con, list))
 
         await pool.close()
@@ -307,7 +307,7 @@ class TestPool(tb.ConnectedTestCase):
 
             self.assertIn(
                 str(inspect.signature(con.execute))[1:],
-                str(inspect.signature(pg_connection.Connection.execute)))
+                str(inspect.signature(gaussdb_connection.Connection.execute)))
 
         await pool.close()
 
@@ -1006,12 +1006,12 @@ class TestPool(tb.ConnectedTestCase):
         await pool.release(conn)
 
 
-@unittest.skipIf(os.environ.get('PGHOST'), 'unmanaged cluster')
+@unittest.skipIf(os.environ.get('GAUSSDBHOST'), 'unmanaged cluster')
 class TestPoolReconnectWithTargetSessionAttrs(tb.ClusterTestCase):
 
     @classmethod
     def setup_cluster(cls):
-        cls.cluster = cls.new_cluster(pg_cluster.TempCluster)
+        cls.cluster = cls.new_cluster(gaussdb_cluster.TempCluster)
         cls.start_cluster(cls.cluster)
 
     async def simulate_cluster_recovery_mode(self):
@@ -1033,7 +1033,7 @@ class TestPoolReconnectWithTargetSessionAttrs(tb.ClusterTestCase):
         )
 
     async def test_full_reconnect_on_node_change_role(self):
-        if self.cluster.get_pg_version() < (12, 0):
+        if self.cluster.get_gaussdb_version() < (12, 0):
             self.skipTest("GaussDBSQL < 12 cannot support standby.signal")
             return
 
@@ -1070,18 +1070,18 @@ class TestPoolReconnectWithTargetSessionAttrs(tb.ClusterTestCase):
         )
 
 
-@unittest.skipIf(os.environ.get('PGHOST'), 'using remote cluster for testing')
+@unittest.skipIf(os.environ.get('GAUSSDBHOST'), 'using remote cluster for testing')
 class TestHotStandby(tb.HotStandbyTestCase):
     def create_pool(self, **kwargs):
         conn_spec = self.standby_cluster.get_connection_spec()
         conn_spec.update(kwargs)
-        return pg_pool.create_pool(loop=self.loop, **conn_spec)
+        return gaussdb_pool.create_pool(loop=self.loop, **conn_spec)
 
     async def test_standby_pool_01(self):
         for n in {1, 3, 5, 10, 20, 100}:
             with self.subTest(tasksnum=n):
                 pool = await self.create_pool(
-                    database='postgres', user='postgres',
+                    database='postgres', user='root',
                     min_size=5, max_size=10)
 
                 async def worker():
@@ -1095,7 +1095,7 @@ class TestHotStandby(tb.HotStandbyTestCase):
 
     async def test_standby_cursors(self):
         con = await self.standby_cluster.connect(
-            database='postgres', user='postgres', loop=self.loop)
+            database='postgres', user='root', loop=self.loop)
 
         try:
             async with con.transaction():

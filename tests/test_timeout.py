@@ -8,7 +8,7 @@
 import asyncio
 
 import async_gaussdb
-from async_gaussdb import connection as pg_connection
+from async_gaussdb import connection as gaussdb_connection
 from async_gaussdb import _testbase as tb
 
 
@@ -136,7 +136,7 @@ class TestConnectionCommandTimeout(tb.ConnectedTestCase):
             self.assertEqual(await self.con.fetch('select 1'), [(1,)])
 
 
-class SlowPrepareConnection(pg_connection.Connection):
+class SlowPrepareConnection(gaussdb_connection.Connection):
     """Connection class to test timeouts."""
     async def _get_statement(self, query, timeout, **kwargs):
         await asyncio.sleep(0.3)

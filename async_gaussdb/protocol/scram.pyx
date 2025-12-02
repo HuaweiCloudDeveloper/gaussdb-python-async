@@ -34,7 +34,7 @@ cdef class SCRAMAuthentication:
     SASL authentication using SCRAM and presents a client with the methods it
     supports. At present, those are SCRAM-SHA-256, and, on servers that are
     built with OpenSSL and
-    are PG11+, SCRAM-SHA-256-PLUS (which supports channel binding, more on that
+    SCRAM-SHA-256-PLUS (which supports channel binding, more on that
     below)
 
     - The client sends a "first message" to the server, where it chooses which
@@ -263,7 +263,7 @@ cdef class SCRAMAuthentication:
         # SASLprep processing.
         # If the password fails SASLprep, the password should still be sent
         # and
-        # using the `pg_saslprep` function
+        # using the `saslprep` function
         normalized_password = original_password
         # if the original password is an ASCII string or fails to encode as a
         # UTF-8 string, then no further action is needed

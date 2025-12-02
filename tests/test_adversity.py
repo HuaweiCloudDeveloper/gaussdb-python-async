@@ -14,7 +14,7 @@ import unittest
 from async_gaussdb import _testbase as tb
 
 
-@unittest.skipIf(os.environ.get('PGHOST'), 'using remote cluster for testing')
+@unittest.skipIf(os.environ.get('GAUSSDBHOST'), 'using remote cluster for testing')
 @unittest.skipIf(
     platform.system() == 'Windows',
     'not compatible with ProactorEventLoop which is default in Python 3.8+')

@@ -31,7 +31,7 @@ It is also possible to use GSSAPI on Windows:
 
   * `pip install gssapi`
   * Install `Kerberos for Windows <https://web.mit.edu/kerberos/dist/>`_.
-  * Set the ``gsslib`` parameter or the ``PGGSSLIB`` environment variable to
+  * Set the ``gsslib`` parameter or the ``GAUSSDBGSSLIB`` environment variable to
     `gssapi` when connecting.
 
 
@@ -54,18 +54,18 @@ in the root of the source checkout:
     $ pip install -e .
 
 A debug build containing more runtime checks can be created by setting
-the ``async_gaussdb_DEBUG`` environment variable when building:
+the ``ASYNC_GAUSSDB_DEBUG`` environment variable when building:
 
 .. code-block:: bash
 
-    $ env async_gaussdb_DEBUG=1 pip install -e .
+    $ env ASYNC_GAUSSDB_DEBUG=1 pip install -e .
 
 
 Running tests
 -------------
 
 
-If you want to run tests you must have PostgreSQL installed.
+If you want to run tests you must have GaussDB installed.
 
 To execute the testsuite run:
 

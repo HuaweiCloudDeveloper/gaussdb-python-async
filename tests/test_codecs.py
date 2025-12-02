@@ -17,7 +17,7 @@ import uuid
 
 import async_gaussdb
 from async_gaussdb import _testbase as tb
-from async_gaussdb import cluster as pg_cluster
+from async_gaussdb import cluster as gaussdb_cluster
 
 
 def _timezone(offset):
@@ -2082,13 +2082,13 @@ class TestCodecs(tb.ConnectedTestCase):
             ''')
 
 
-@unittest.skipIf(os.environ.get('PGHOST'), 'using remote cluster for testing')
+@unittest.skipIf(os.environ.get('GAUSSDBHOST'), 'using remote cluster for testing')
 class TestCodecsLargeOIDs(tb.ConnectedTestCase):
     LARGE_OID = 2147483648
 
     @classmethod
     def setup_cluster(cls):
-        cls.cluster = cls.new_cluster(pg_cluster.TempCluster)
+        cls.cluster = cls.new_cluster(gaussdb_cluster.TempCluster)
         cls.cluster.reset_wal(oid=cls.LARGE_OID)
         cls.start_cluster(cls.cluster)
 

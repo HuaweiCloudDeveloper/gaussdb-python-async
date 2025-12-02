@@ -10,7 +10,7 @@ Does async_gaussdb support DB-API?
 No.  DB-API is a synchronous API, while async_gaussdb is based
 around an asynchronous I/O model.  Thus, full drop-in compatibility
 with DB-API is not possible and we decided to design async_gaussdb API
-in a way that is better aligned with PostgreSQL architecture and
+in a way that is better aligned with GaussDB architecture and
 terminology.  We will release a synchronous DB-API-compatible version
 of async_gaussdb at some point in the future.
 
@@ -62,17 +62,7 @@ Why am I getting prepared statement errors?
 If you are getting intermittent ``prepared statement "__async_gaussdb_stmt_xx__"
 does not exist`` or ``prepared statement “__async_gaussdb_stmt_xx__”
 already exists`` errors, you are most likely not connecting to the
-PostgreSQL server directly, but via
-`pgbouncer <https://pgbouncer.github.io/>`_.  pgbouncer, when
-in the ``"transaction"`` or ``"statement"`` pooling mode, does not support
-prepared statements.  You have several options:
-
-* if you are using pgbouncer only to reduce the cost of new connections
-  (as opposed to using pgbouncer for connection pooling from
-  a large number of clients in the interest of better scalability),
-  switch to the :ref:`connection pool <async_gaussdb-connection-pool>`
-  functionality provided by async_gaussdb, it is a much better option for this
-  purpose;
+GaussDB server directly, but via
 
 * disable automatic use of prepared statements by passing
   ``statement_cache_size=0``
@@ -81,13 +71,13 @@ prepared statements.  You have several options:
   (and, obviously, avoid the use of
   :meth:`Connection.prepare() <async_gaussdb.connection.Connection.prepare>`);
 
-* switch pgbouncer's ``pool_mode`` to ``session``.
 
 
-Why do I get ``PostgresSyntaxError`` when using ``expression IN $1``?
+
+Why do I get ``GaussDBSyntaxError`` when using ``expression IN $1``?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``expression IN $1`` is not a valid PostgreSQL syntax.  To check
+``expression IN $1`` is not a valid GaussDB syntax.  To check
 a value against a sequence use ``expression = any($1::mytype[])``,
 where ``mytype`` is the array element type.
 

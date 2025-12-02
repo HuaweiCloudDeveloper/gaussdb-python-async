@@ -44,9 +44,9 @@ _TYPE_ALIASES = {
 
 
 async def runner(args):
-    conn = await async_gaussdb.connect(host=args.pghost,
-                                       port=args.pgport,
-                                       user=args.pguser)
+    conn = await async_gaussdb.connect(host=args.gaussdbhost,
+                                       port=args.gaussdbport,
+                                       user=args.gaussdbuser)
 
     buf = (
         '# Copyright (C) 2016-present the asyncpg authors and contributors\n'
@@ -115,13 +115,13 @@ def main():
     parser = argparse.ArgumentParser(
         description='generate protocol/pgtypes.pxi from pg_catalog.pg_types')
     parser.add_argument(
-        '--pghost', type=str, default='127.0.0.1',
+        '--gaussdbhost', type=str, default='127.0.0.1',
         help='GaussDBSQL server host')
     parser.add_argument(
-        '--pgport', type=int, default=5432,
+        '--gaussdbport', type=int, default=5432,
         help='GaussDBSQL server port')
     parser.add_argument(
-        '--pguser', type=str, default='postgres',
+        '--gaussdbuser', type=str, default='root',
         help='GaussDBSQL server user')
 
     args = parser.parse_args()
