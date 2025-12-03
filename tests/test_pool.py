@@ -721,14 +721,14 @@ class TestPool(tb.ConnectedTestCase):
         # the max inactive lifetime.
         async with self.create_pool(
                 database='postgres', min_size=2, max_size=2,
-                max_inactive_connection_lifetime=0.3) as pool:
+                max_inactive_connection_lifetime=0.5) as pool:
 
-            await asyncio.sleep(0.02)
+            await asyncio.sleep(0.1)
             self.assertIsNotNone(pool._holders[0]._con)
             self.assertIsNotNone(pool._holders[1]._con)
 
-            await pool.execute('SELECT pg_sleep(0.3)')
-            await asyncio.sleep(0.3)
+            await pool.execute('SELECT pg_sleep(0.5)')
+            await asyncio.sleep(0.5)
 
             self.assertIs(pool._holders[0]._con, None)
             # The connection in the second holder was never used,

@@ -208,7 +208,7 @@ class BitString:
     def __repr__(self) -> str:
         return '<BitString {}>'.format(self.as_string())
 
-    __str__: typing.Callable[['BitString'], str] = __repr__
+    __str__ = __repr__
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, BitString):
