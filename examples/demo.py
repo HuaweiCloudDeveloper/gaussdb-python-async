@@ -1,6 +1,6 @@
-
 import asyncio
 import async_gaussdb
+
 # -----------------------------------------------------------------------------
 # Database Connection Configuration
 # -----------------------------------------------------------------------------
@@ -12,11 +12,13 @@ DB_CONFIG = {
     'port': 8000
 }
 
+
 async def main():
     print(f"Connecting to GaussDB at {DB_CONFIG['host']}:{DB_CONFIG['port']}...")
-    
+
     # 1. Establish Connection
-    # async_gaussdb automatically handles openGauss/GaussDB specific protocols (e.g., SHA256 auth)
+    # async_gaussdb automatically handles openGauss/GaussDB specific protocols
+    # (e.g., SHA256 auth)
     conn = await async_gaussdb.connect(**DB_CONFIG)
     print("✅ Connection established successfully!")
 
@@ -41,18 +43,18 @@ async def main():
 
         # ---------------------------------------------------------------------
         # Step 3: Insert Data
-        # Note: Async drivers for Postgres/GaussDB typically use $1, $2 placeholders
-        # instead of %s used in standard synchronous drivers.
+        # Note: Async drivers for Postgres/GaussDB typically use $1, $2
+        # placeholders instead of %s used in standard synchronous drivers.
         # ---------------------------------------------------------------------
         insert_data_sql = "INSERT INTO test (num, data) VALUES ($1, $2)"
-        
+
         # Preparing sample data
         data_to_insert = [
             (1, 'initial_data'),
-            (2, 'data_to_be_updated'), # This row (num=2) will be updated later
+            (2, 'data_to_be_updated'),  # This row (num=2) will be updated later
             (3, 'other_data')
         ]
-        
+
         print(f"\n[Executing] {insert_data_sql}")
         for num, data in data_to_insert:
             await conn.execute(insert_data_sql, num, data)
@@ -72,24 +74,25 @@ async def main():
         # ---------------------------------------------------------------------
         select_sql = "SELECT * FROM test ORDER BY id"
         print(f"\n[Executing] {select_sql}")
-        
+
         # fetch() returns a list of Record objects
         rows = await conn.fetch(select_sql)
-        
+
         print("\n--- Query Results ---")
         for row in rows:
             # Access data by column name or index
             print(f"ID: {row['id']} | Num: {row['num']} | Data: {row['data']}")
-            
+
     except Exception as e:
-        print(f"\n❌ An error occurred: {e}")
+        print(f"\nAn error occurred: {e}")
     finally:
         # ---------------------------------------------------------------------
         # Close Connection
         # ---------------------------------------------------------------------
         print("\nClosing connection...")
         await conn.close()
-        print("✅ Connection closed.")
+        print("Connection closed.")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
